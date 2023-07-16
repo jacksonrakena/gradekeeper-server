@@ -2,24 +2,15 @@ mod models;
 mod schema;
 mod routes;
 mod middleware;
-
-
 use std::env;
 use std::iter::{once};
 use std::sync::Arc;
 use axum::{Router, routing::{get, post},};
-
 use axum::http::{Method};
 use axum::http::header::AUTHORIZATION;
-
 use diesel::{MysqlConnection};
-
 use dotenvy::dotenv;
-use log::{info, LevelFilter};
-
-use pretty_env_logger::env_logger::{Builder, Target};
-
-
+use log::{error, info, Level, LevelFilter};
 
 use diesel::prelude::*;
 
@@ -29,16 +20,10 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tower_http::{add_extension::AddExtensionLayer};
 use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
+use tracing_subscriber::filter::Targets;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 use crate::middleware::auth::check_authorization;
-
-
-
-
-
-
-
-
-
 
 pub struct ServerState {
     db_pool: Pool<ConnectionManager<MysqlConnection>>
@@ -47,11 +32,15 @@ pub struct ServerState {
 #[tokio::main]
 async fn main() {
     dotenv().unwrap();
-    Builder::new()
-        .filter_module(stringify!(gk_server), LevelFilter::Info)
-        .target(Target::Stdout)
+    let filter = Targets::new()
+        .with_target("tower_http::trace::on_response", tracing_subscriber::filter::LevelFilter::TRACE)
+        .with_default(tracing_subscriber::filter::LevelFilter::INFO);
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(filter)
         .init();
-    info!("Gradekeeper Nova server starting");
+    info!("Gradekeeper Nova server starting on {} {} {}", env::consts::FAMILY, env::consts::OS,  env::consts::ARCH);
 
     let initial_state = ServerState {
         db_pool: Pool::builder()
@@ -88,8 +77,12 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .layer(AddExtensionLayer::new(Arc::new(initial_state)));
 
-    axum::Server::bind(&"0.0.0.0:3001".parse().unwrap()).serve(app.into_make_service()).await.unwrap();
-    println!("online");
+    let server = axum::Server::bind(&"0.0.0.0:3001".parse().unwrap())
+        .serve(app.into_make_service());
+
+    if let Err(err) = server.await {
+        error!("server crashed: {}", err);
+    }
 }
 
 
