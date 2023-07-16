@@ -6,6 +6,7 @@ use serde::Serialize;
 #[derive(Queryable, Serialize, Selectable, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::user)]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
+#[serde(rename_all="camelCase")]
 pub struct User {
     pub id: String,
     #[diesel(column_name="gradeMap")]
@@ -13,6 +14,7 @@ pub struct User {
 }
 #[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::study_block)]
+#[serde(rename_all="camelCase")]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
 #[diesel(belongs_to(User, foreign_key=userId))]
 pub struct StudyBlock {
@@ -29,6 +31,7 @@ pub struct StudyBlock {
 }
 #[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::course)]
+#[serde(rename_all="camelCase")]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
 #[diesel(belongs_to(StudyBlock, foreign_key=studyBlockId))]
 pub struct Course {
@@ -45,6 +48,7 @@ pub struct Course {
 }
 #[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::course_component)]
+#[serde(rename_all="camelCase")]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
 #[diesel(belongs_to(Course, foreign_key=subjectId))]
 pub struct CourseComponent {
@@ -53,6 +57,7 @@ pub struct CourseComponent {
     #[diesel(column_name="nameOfSubcomponentSingular")]
     pub name_of_subcomponent_singular: String,
     #[diesel(column_name="numberOfSubComponentsToDrop_Lowest")]
+    #[serde(rename="numberOfSubcomponentsToDrop_Lowest")]
     pub number_of_subcomponents_to_drop_lowest: i32,
     #[diesel(column_name="subjectId")]
     pub subject_id: String,
@@ -62,6 +67,7 @@ pub struct CourseComponent {
 
 #[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::course_subcomponent)]
+#[serde(rename_all="camelCase")]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
 #[diesel(belongs_to(CourseComponent, foreign_key=componentId))]
 pub struct CourseSubcomponent {
