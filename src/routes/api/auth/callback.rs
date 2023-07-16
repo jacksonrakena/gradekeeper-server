@@ -100,10 +100,10 @@ pub async fn handle_auth_callback(Query(data): Query<CallbackData>, Extension(st
         .path("/")
         .max_age(Duration::minutes(state.config.jwt_maxage))
         .same_site(SameSite::Lax)
-        .http_only(true)
+        .http_only(false)
         .finish();
 
-    let mut response = Redirect::to("/").into_response();
+    let mut response = Redirect::to(&state.config.client_redirect_url).into_response();
     response.headers_mut().insert(header::SET_COOKIE, cookie.to_string().parse().unwrap());
 
     Ok(response)
