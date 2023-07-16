@@ -1,4 +1,3 @@
-ALTER TABLE `User` RENAME TO `user`;
 ALTER TABLE `StudyBlock` RENAME TO `study_block`;
 ALTER TABLE `Subject` RENAME TO `course`;
 ALTER TABLE `SubjectComponent` RENAME TO `course_component`;

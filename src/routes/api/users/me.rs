@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::env;
-use axum::Json;
-use diesel::{Connection, MysqlConnection};
-use dotenvy::dotenv;
+use std::sync::Arc;
+use axum::{Extension, Json};
+use diesel::prelude::*;
 use serde::Serialize;
 use crate::models::{StudyBlock, Course, User, CourseComponent, CourseSubcomponent};
+use crate::ServerState;
 
 #[derive(Serialize)]
 #[serde(rename_all="camelCase")]
@@ -20,6 +20,7 @@ pub struct GetUserStudyBlock {
     #[serde(rename = "subjects")]
     courses: Vec<GetUserCourse>
 }
+
 #[derive(Serialize)]
 #[serde(rename_all="camelCase")]
 pub struct GetUserCourse {
@@ -37,17 +38,8 @@ pub struct GetUserComponent {
 
     subcomponents: Vec<crate::models::CourseSubcomponent>
 }
-pub fn establish_connection() -> MysqlConnection {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    MysqlConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
-}
-
-pub async fn get_user() -> Result<Json<GetUser>, String> {
-    let con = &mut establish_connection();
-    use diesel::prelude::*;
+pub async fn get_user(Extension(state): Extension<Arc<ServerState>>) -> Result<Json<GetUser>, String> {
+    let con = &mut state.db_pool.get().unwrap();
     let user = crate::schema::user::dsl::user
         .find("jackson.rakena@gmail.com")
         .select(User::as_select())
@@ -73,38 +65,33 @@ pub async fn get_user() -> Result<Json<GetUser>, String> {
     println!("{}",user.id);
     Ok(Json(GetUser {
         grade_map: serde_json::from_str(user.grade_map.as_str()).unwrap(),
-        study_blocks: courses
-            .grouped_by(&study_blocks)
-            .into_iter()
-            .zip(study_blocks)
-            .map(|(vcourses, block)| {
-                GetUserStudyBlock {
-                    study_block: block,
-                    courses: components
-                        .clone()
-                        .grouped_by(&vcourses)
-                        .into_iter()
-                        .zip(vcourses)
-                        .map(|(vcomponents, ncourse)| {
-                            GetUserCourse {
-                                course: ncourse,
-                                components: subcomponents
-                                    .clone()
-                                    .grouped_by(&vcomponents)
-                                    .into_iter()
-                                    .zip(vcomponents)
-                                    .map(move |(subcomponents,ncomponent)| {
-                                        GetUserComponent {
-                                            component: ncomponent,
-                                            subcomponents
-                                        }
-                                    })
-                                    .collect()
-                            }
-                        })
-                        .collect()
-                }
-            })
-            .collect(),
+        study_blocks: study_blocks.into_iter().map(|s|{
+            GetUserStudyBlock {
+                study_block: s.clone(),
+                courses: courses
+                    .clone()
+                    .into_iter()
+                    .filter(|x|x.study_block_id==s.id)
+                    .map(|c|{
+                        GetUserCourse{
+                            course: c.clone(),
+                            components: components
+                                .clone()
+                                .into_iter()
+                                .filter(|component|component.subject_id==c.id)
+                                .map(|component|GetUserComponent {
+                                    component: component.clone(),
+                                    subcomponents: subcomponents
+                                        .clone()
+                                        .into_iter()
+                                        .filter(|subc|subc.component_id==component.id)
+                                        .collect()
+                                })
+                                .collect()
+                        }
+                    })
+                    .collect()
+            }
+        }).collect()
     }))
 }

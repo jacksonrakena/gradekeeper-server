@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use rust_decimal::Decimal;
+
 use time::OffsetDateTime;
 use serde::Serialize;
 
@@ -57,7 +57,7 @@ pub struct CourseComponent {
     #[diesel(column_name="nameOfSubcomponentSingular")]
     pub name_of_subcomponent_singular: String,
     #[diesel(column_name="numberOfSubComponentsToDrop_Lowest")]
-    #[serde(rename="numberOfSubcomponentsToDrop_Lowest")]
+    #[serde(rename="numberOfSubComponentsToDrop_Lowest")]
     pub number_of_subcomponents_to_drop_lowest: i32,
     #[diesel(column_name="subjectId")]
     pub subject_id: String,

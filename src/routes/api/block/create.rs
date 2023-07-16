@@ -3,7 +3,7 @@ use axum::Json;
 use serde::{Deserialize,Serialize};
 
 
-pub async fn create_block(Json(payload): Json<CreateBlock>) -> (StatusCode, Json<CreateBlock>){
+pub async fn create_block(Json(_payload): Json<CreateBlock>) -> (StatusCode, Json<CreateBlock>){
     (StatusCode::CREATED, Json(CreateBlock{}))
 }
 

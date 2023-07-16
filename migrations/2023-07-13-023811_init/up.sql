@@ -1,4 +1,4 @@
-CREATE TABLE `User` (
+CREATE TABLE `user` (
                         `id` varchar(191) NOT NULL,
                         `gradeMap` json NOT NULL,
                         PRIMARY KEY (`id`)

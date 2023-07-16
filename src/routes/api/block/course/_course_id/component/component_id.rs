@@ -5,6 +5,6 @@ use serde::{Deserialize};
 #[derive(Deserialize)]
 pub struct UpdateCourseComponent{}
 
-pub async fn update_course_component(Json(component_data): Json<UpdateCourseComponent>) -> (StatusCode) {
+pub async fn update_course_component(Json(_component_data): Json<UpdateCourseComponent>) -> StatusCode {
     StatusCode::OK
 }
