@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use axum::{Extension, Json};
+use axum::http::StatusCode;
 use diesel::prelude::*;
 use serde::Serialize;
+use crate::errors::{AppError, AppErrorType};
 use crate::models::{StudyBlock, Course, User, CourseComponent, CourseSubcomponent};
 use crate::ServerState;
 
@@ -38,13 +40,17 @@ pub struct GetUserComponent {
 
     subcomponents: Vec<crate::models::CourseSubcomponent>
 }
-pub async fn get_user(Extension(state): Extension<Arc<ServerState>>) -> Result<Json<GetUser>, String> {
+pub async fn get_user(Extension(state): Extension<Arc<ServerState>>) -> Result<Json<GetUser>, AppError> {
     let con = &mut state.db_pool.get().unwrap();
-    let user = crate::schema::user::dsl::user
+
+    let Ok(user) = crate::schema::user::dsl::user
         .find("jackson.rakena@gmail.com")
         .select(User::as_select())
-        .first(con)
-        .unwrap();
+        .first(con) else { return Err(AppError {
+            name: AppErrorType::UnknownServerError,
+            status_code: StatusCode::NOT_FOUND,
+            description: format!("User not found."),
+    }) };
 
     let study_blocks = StudyBlock::belonging_to(&user)
         .select(StudyBlock::as_select())
@@ -62,7 +68,6 @@ pub async fn get_user(Extension(state): Extension<Arc<ServerState>>) -> Result<J
         .load(con)
         .unwrap();
 
-    println!("{}",user.id);
     Ok(Json(GetUser {
         grade_map: serde_json::from_str(user.grade_map.as_str()).unwrap(),
         study_blocks: study_blocks.into_iter().map(|s|{

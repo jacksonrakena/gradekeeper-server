@@ -2,6 +2,7 @@ mod models;
 mod schema;
 mod routes;
 mod middleware;
+mod errors;
 use std::env;
 use std::iter::{once};
 use std::sync::Arc;
