@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use axum::{Extension, Json};
-use axum::http::StatusCode;
+use axum::http::{Request, StatusCode};
 use diesel::prelude::*;
 use serde::Serialize;
 use crate::errors::{AppError, AppErrorType};
 use crate::models::{StudyBlock, Course, User, CourseComponent, CourseSubcomponent};
+use crate::routes::api::auth::callback::Session;
 use crate::ServerState;
 
 #[derive(Serialize)]
@@ -40,11 +41,11 @@ pub struct GetUserComponent {
 
     subcomponents: Vec<crate::models::CourseSubcomponent>
 }
-pub async fn get_user(Extension(state): Extension<Arc<ServerState>>) -> Result<Json<GetUser>, AppError> {
+pub async fn get_user<B>(Extension(user_session): Extension<Arc<Session>>, Extension(state): Extension<Arc<ServerState>>, req: axum::http::Request<B>) -> Result<Json<GetUser>, AppError> {
     let con = &mut state.db_pool.get().unwrap();
 
     let Ok(user) = crate::schema::user::dsl::user
-        .find("jackson.rakena@gmail.com")
+        .find(user_session.id.clone())
         .select(User::as_select())
         .first(con) else { return Err(AppError {
             name: AppErrorType::UnknownServerError,

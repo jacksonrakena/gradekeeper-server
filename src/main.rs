@@ -3,6 +3,7 @@ mod schema;
 mod routes;
 mod middleware;
 mod errors;
+mod config;
 use std::env;
 use std::iter::{once};
 use std::sync::Arc;
@@ -24,15 +25,17 @@ use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
 use tracing_subscriber::filter::Targets;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use crate::config::Config;
 use crate::middleware::auth::check_authorization;
 
 pub struct ServerState {
-    db_pool: Pool<ConnectionManager<MysqlConnection>>
+    db_pool: Pool<ConnectionManager<MysqlConnection>>,
+    config: Config
 }
 
 #[tokio::main]
 async fn main() {
-    dotenv().unwrap();
+    let config =  Config::init_from_env();
     let filter = Targets::new()
         .with_target("tower_http::trace::on_response", tracing_subscriber::filter::LevelFilter::TRACE)
         .with_default(tracing_subscriber::filter::LevelFilter::INFO);
@@ -46,13 +49,14 @@ async fn main() {
     let initial_state = ServerState {
         db_pool: Pool::builder()
             .test_on_check_out(true)
-            .build(ConnectionManager::<MysqlConnection>::new(env::var("DATABASE_URL").expect("DATABASE_URL must be set")))
-            .expect("Could not build connection pool")
+            .build(ConnectionManager::<MysqlConnection>::new(&config.database_url))
+            .expect("Could not build connection pool"),
+        config
     };
 
     let app = Router::new()
         // Users
-        .route("/users/me", get(crate::routes::api::users::me::get_user))
+        .route("/api/users/me", get(crate::routes::api::users::me::get_user))
         // Blocks
         .route("/block/create", post(routes::api::block::create::create_block))
         .route("/block/:block_id", get(routes::api::block::block_id::get_block))
@@ -72,6 +76,9 @@ async fn main() {
         .layer(axum::middleware::from_fn(check_authorization))
         // End authorised section
 
+        // Login
+        .route("/api/auth/login", get(routes::api::auth::login::handle_login_request))
+        .route("/api/auth/callback", get(routes::api::auth::callback::handle_auth_callback))
         // Final Layer - CORS
         .layer(SetSensitiveRequestHeadersLayer::new(once(AUTHORIZATION)))
         .layer(CorsLayer::new().allow_origin(Any).allow_methods([Method::GET,Method::POST]))
