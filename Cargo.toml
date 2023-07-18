@@ -12,7 +12,7 @@ log = "0.4.17"
 serde = { version = "1.0.171", features = ["derive"] }
 serde_json = "1.0.102"
 time = { version = "0.3.23", features = ["serde-well-known"] }
-diesel = { version = "2.1.0", features = ["mysql", "time", "r2d2"] }
+diesel = { version = "2.1.0", features = ["mysql", "time", "extras", "r2d2", "postgres", "bigdecimal", "numeric"] }
 
 dotenvy = "0.15"
 tower = "0.4.13"
@@ -28,3 +28,4 @@ reqwest = { version = "0.11.18", features = ["serde_json", "json"] }
 chrono = "0.4.26"
 cuid2 = "0.1.0"
 axum-macros = "0.3.7"
+bigdecimal = { version = "0.3.1", features = ["serde"] }

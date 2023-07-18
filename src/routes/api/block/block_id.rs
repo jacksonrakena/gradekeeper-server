@@ -6,7 +6,7 @@ use diesel::{BoolExpressionMethods, ExpressionMethods, RunQueryDsl};
 use crate::errors::AppError;
 use crate::routes::api::auth::callback::Session;
 use crate::schema::study_block::dsl::study_block;
-use crate::schema::study_block::{id, userId};
+use crate::schema::study_block::{id, user_id};
 use crate::ServerState;
 
 pub async fn delete_block(Path(_id): Path<String>,
@@ -15,7 +15,7 @@ Extension(session): Extension<Arc<Session>>) -> Result<(), AppError> {
     let con = &mut state.db_pool.get().unwrap();
 
     let rows = diesel::delete(study_block)
-        .filter(id.eq(_id).and(userId.eq(session.id.clone())))
+        .filter(id.eq(_id).and(user_id.eq(session.id.clone())))
         .execute(con)
         .or_else(|e|{Err(AppError{
             status_code: StatusCode::BAD_REQUEST,

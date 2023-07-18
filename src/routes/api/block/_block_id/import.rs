@@ -2,6 +2,7 @@ use std::sync::Arc;
 use axum::{Extension, Json};
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
+use bigdecimal::{BigDecimal, Zero};
 use cuid2::cuid;
 use diesel::{BelongingToDsl, GroupedBy, insert_into, Insertable, QueryDsl, RunQueryDsl, SelectableHelper};
 use log::info;
@@ -48,7 +49,7 @@ pub(crate) async fn import_course(Path(block_id): Path<String>, Extension(state)
         long_name: original_course.long_name.clone(),
         course_code_name: original_course.course_code_name.clone(),
         course_code_number: original_course.course_code_number.clone(),
-        study_block_id: block_id,
+        block_id,
         color: original_course.color.clone(),
     };
 
@@ -61,7 +62,7 @@ pub(crate) async fn import_course(Path(block_id): Path<String>, Extension(state)
             name: c.name.clone(),
             name_of_subcomponent_singular:c.name_of_subcomponent_singular.clone(),
             number_of_subcomponents_to_drop_lowest: c.number_of_subcomponents_to_drop_lowest,
-            subject_id: new_course_id.clone(),
+            course_id: new_course_id.clone(),
             subject_weighting: c.subject_weighting,
         };
         components.push(component);
@@ -69,7 +70,7 @@ pub(crate) async fn import_course(Path(block_id): Path<String>, Extension(state)
             subcomponents.push(CourseSubcomponent{
                 id: cuid(),
                 component_id: component_id.clone(),
-                grade_value_percentage: 0.0,
+                grade_value_percentage: BigDecimal::zero(),
                 is_completed: false,
                 number_in_sequence: subcomponent.number_in_sequence,
                 override_name: subcomponent.override_name,

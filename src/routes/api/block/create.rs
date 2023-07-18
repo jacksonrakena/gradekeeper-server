@@ -4,7 +4,7 @@ use axum::{Extension, Json};
 use cuid2::cuid;
 use diesel::{insert_into, QueryDsl, RunQueryDsl, SelectableHelper};
 use serde::{Deserialize,Serialize};
-use time::OffsetDateTime;
+use time::{OffsetDateTime, PrimitiveDateTime};
 use crate::errors::{AppError};
 use crate::models::StudyBlock;
 use crate::routes::api::auth::callback::Session;
@@ -46,9 +46,7 @@ pub async fn create_block(
 #[serde(rename_all="camelCase")]
 #[derive(Deserialize, Serialize)]
 pub struct CreateBlock{
-    #[serde(with = "time::serde::rfc3339")]
-    pub end_date: OffsetDateTime,
-    #[serde(with = "time::serde::rfc3339")]
-    pub start_date: OffsetDateTime,
+    pub end_date: PrimitiveDateTime,
+    pub start_date: PrimitiveDateTime,
     pub name: String
 }

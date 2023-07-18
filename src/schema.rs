@@ -5,14 +5,14 @@ diesel::table! {
         #[max_length = 191]
         id -> Varchar,
         #[max_length = 191]
-        studyBlockId -> Varchar,
+        block_id -> Varchar,
         #[max_length = 191]
-        longName -> Varchar,
+        long_name -> Varchar,
         #[max_length = 191]
-        courseCodeName -> Varchar,
+        course_code_name -> Varchar,
         #[max_length = 191]
-        courseCodeNumber -> Varchar,
-        #[max_length = 191]
+        course_code_number -> Varchar,
+        #[max_length = 7]
         color -> Varchar,
     }
 }
@@ -22,13 +22,13 @@ diesel::table! {
         #[max_length = 191]
         id -> Varchar,
         #[max_length = 191]
-        subjectId -> Varchar,
+        course_id -> Varchar,
         #[max_length = 191]
         name -> Varchar,
         #[max_length = 191]
-        nameOfSubcomponentSingular -> Varchar,
-        subjectWeighting -> Double,
-        numberOfSubComponentsToDrop_Lowest -> Integer,
+        name_of_subcomponent_singular -> Varchar,
+        subject_weighting -> Numeric,
+        number_of_subcomponents_to_drop_lowest -> Int4,
     }
 }
 
@@ -37,12 +37,21 @@ diesel::table! {
         #[max_length = 191]
         id -> Varchar,
         #[max_length = 191]
-        componentId -> Varchar,
-        numberInSequence -> Integer,
+        component_id -> Varchar,
+        number_in_sequence -> Int4,
         #[max_length = 191]
-        overrideName -> Nullable<Varchar>,
-        isCompleted -> Bool,
-        gradeValuePercentage -> Double,
+        override_name -> Nullable<Varchar>,
+        is_completed -> Bool,
+        grade_value_percentage -> Numeric,
+    }
+}
+
+diesel::table! {
+    gk_user (id) {
+        #[max_length = 191]
+        id -> Varchar,
+        grade_map -> Json,
+        created_at -> Timestamp,
     }
 }
 
@@ -51,31 +60,23 @@ diesel::table! {
         #[max_length = 191]
         id -> Varchar,
         #[max_length = 191]
-        userId -> Varchar,
-        startDate -> Datetime,
-        endDate -> Datetime,
+        user_id -> Varchar,
+        start_date -> Timestamp,
+        end_date -> Timestamp,
         #[max_length = 191]
         name -> Varchar,
     }
 }
 
-diesel::table! {
-    user (id) {
-        #[max_length = 191]
-        id -> Varchar,
-        gradeMap -> Longtext,
-    }
-}
-
-diesel::joinable!(course -> study_block (studyBlockId));
-diesel::joinable!(course_component -> course (subjectId));
-diesel::joinable!(course_subcomponent -> course_component (componentId));
-diesel::joinable!(study_block -> user (userId));
+diesel::joinable!(course -> study_block (block_id));
+diesel::joinable!(course_component -> course (course_id));
+diesel::joinable!(course_subcomponent -> course_component (component_id));
+diesel::joinable!(study_block -> gk_user (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     course,
     course_component,
     course_subcomponent,
+    gk_user,
     study_block,
-    user,
 );

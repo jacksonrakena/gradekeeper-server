@@ -31,7 +31,7 @@ use crate::config::Config;
 use crate::middleware::auth::{check_authorization, validate_ownership_of_block, validate_ownership_of_block_and_course};
 
 pub struct ServerState {
-    db_pool: Pool<ConnectionManager<MysqlConnection>>,
+    db_pool: Pool<ConnectionManager<PgConnection>>,
     config: Config
 }
 
@@ -51,7 +51,7 @@ async fn main() {
     let initial_state = ServerState {
         db_pool: Pool::builder()
             .test_on_check_out(true)
-            .build(ConnectionManager::<MysqlConnection>::new(&config.database_url))
+            .build(ConnectionManager::<PgConnection>::new(&config.database_url))
             .expect("Could not build connection pool"),
         config
     };

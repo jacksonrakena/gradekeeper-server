@@ -1,6 +1,6 @@
 -- This file should undo anything in `up.sql`
-DROP TABLE `User`;
-DROP TABLE `SubjectSubcomponent`;
-DROP TABLE `SubjectComponent`;
-DROP TABLE `Subject`;
-DROP TABLE `StudyBlock`;
+DROP TABLE course_subcomponent;
+DROP TABLE course_component;
+DROP TABLE course;
+DROP TABLE study_block;
+DROP TABLE user;

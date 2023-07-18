@@ -19,35 +19,34 @@ use crate::errors::{AppError};
 use crate::models::{Course, StudyBlock};
 use crate::routes::api::auth::callback::Session;
 use crate::schema::course::dsl::course;
-use crate::schema::course::studyBlockId;
+use crate::schema::course::block_id;
 use crate::schema::study_block::dsl::study_block;
-use crate::schema::study_block::{id, userId};
+use crate::schema::study_block::{id, user_id};
 use crate::{schema, ServerState};
 
 pub(crate) const COOKIE_NAME: &'static str = "GK_COOKIE";
 
-async fn _validate_ownership_of_block(block_id: &String, session: Arc<Session>, state: Arc<ServerState>) -> Option<StudyBlock> {
+async fn _validate_ownership_of_block(_block_id: &String, session: Arc<Session>, state: Arc<ServerState>) -> Option<StudyBlock> {
     let con = &mut state.db_pool.get().unwrap();
     study_block
-        .filter(id.eq(block_id.clone()).and(userId.eq(session.id.clone())))
+        .filter(id.eq(_block_id.clone()).and(user_id.eq(session.id.clone())))
         .select(StudyBlock::as_select()).first(con).ok()
 }
-pub async fn validate_ownership_of_block_and_course<B>(Path((block_id, course_id)): Path<(String, String)>,
+pub async fn validate_ownership_of_block_and_course<B>(Path((_block_id, course_id)): Path<(String, String)>,
                                                        Extension(session): Extension<Arc<Session>>,
                                                        Extension(state): Extension<Arc<ServerState>>,
                                                        mut request: Request<B>, next: Next<B>) -> Result<Response, AppError> {
-    if _validate_ownership_of_block(&block_id, session, state).await.is_some() {
+    if _validate_ownership_of_block(&_block_id, session, state).await.is_some() {
         return Ok(next.run(request).await)
     }
     AppError::resource_access_denied().into()
 }
 
-pub async fn validate_ownership_of_block<B>(Path(block_id): Path<String>,
+pub async fn validate_ownership_of_block<B>(Path(_block_id): Path<String>,
                                             Extension(session): Extension<Arc<Session>>,
                                             Extension(state): Extension<Arc<ServerState>>,
                                             mut request: Request<B>, next: Next<B>) -> Result<Response, AppError> {
-    if _validate_ownership_of_block(&block_id, session, state).await.is_some() {
-        info!("validated ownership of {}",block_id);
+    if _validate_ownership_of_block(&_block_id, session, state).await.is_some() {
         return Ok(next.run(request).await)
     }
     AppError::resource_access_denied().into()

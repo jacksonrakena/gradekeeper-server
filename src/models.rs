@@ -1,85 +1,69 @@
 use diesel::prelude::*;
 
-use time::OffsetDateTime;
+use time::{OffsetDateTime, PrimitiveDateTime};
 use serde::Serialize;
 
-#[derive(Queryable, Serialize, Selectable, Identifiable, Clone, Debug)]
-#[diesel(table_name = crate::schema::user)]
-#[diesel(check_for_backend(diesel::mysql::Mysql))]
+#[derive(Queryable, Serialize, Selectable, Insertable, Identifiable, Clone, Debug)]
+#[diesel(table_name = crate::schema::gk_user)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(rename_all="camelCase")]
 pub struct User {
     pub id: String,
-    #[diesel(column_name="gradeMap")]
-    pub grade_map: String
+    pub grade_map: serde_json::Value,
+    pub created_at: PrimitiveDateTime
 }
 #[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Insertable, Clone, Debug)]
 #[diesel(table_name = crate::schema::study_block)]
 #[serde(rename_all="camelCase")]
-#[diesel(check_for_backend(diesel::mysql::Mysql))]
-#[diesel(belongs_to(User, foreign_key=userId))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(belongs_to(User))]
 pub struct StudyBlock {
-    #[serde(with = "time::serde::rfc3339")]
-    #[diesel(column_name="endDate")]
-    pub end_date: OffsetDateTime,
-    #[serde(with = "time::serde::rfc3339")]
-    #[diesel(column_name="startDate")]
-    pub start_date: OffsetDateTime,
+    pub end_date: PrimitiveDateTime,
+    pub start_date: PrimitiveDateTime,
     pub id: String,
     pub name: String,
-    #[diesel(column_name="userId")]
     pub user_id: String,
 }
 #[derive(Queryable, Selectable, Serialize, Associations, Insertable, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::course)]
 #[serde(rename_all="camelCase")]
-#[diesel(check_for_backend(diesel::mysql::Mysql))]
-#[diesel(belongs_to(StudyBlock, foreign_key=studyBlockId))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(belongs_to(StudyBlock, foreign_key=block_id))]
 pub struct Course {
     pub id: String,
-    #[diesel(column_name="longName")]
     pub long_name: String,
-    #[diesel(column_name="courseCodeName")]
     pub course_code_name: String,
-    #[diesel(column_name="courseCodeNumber")]
     pub course_code_number: String,
-    #[diesel(column_name="studyBlockId")]
-    pub study_block_id: String,
+    #[serde(rename="studyBlockId")]
+    pub block_id: String,
     pub color: String,
 }
 #[derive(Queryable, Selectable, Serialize, Associations, Insertable, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::course_component)]
 #[serde(rename_all="camelCase")]
-#[diesel(check_for_backend(diesel::mysql::Mysql))]
-#[diesel(belongs_to(Course, foreign_key=subjectId))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(belongs_to(Course))]
 pub struct CourseComponent {
     pub id: String,
     pub name: String,
-    #[diesel(column_name="nameOfSubcomponentSingular")]
     pub name_of_subcomponent_singular: String,
-    #[diesel(column_name="numberOfSubComponentsToDrop_Lowest")]
     #[serde(rename="numberOfSubComponentsToDrop_Lowest")]
     pub number_of_subcomponents_to_drop_lowest: i32,
-    #[diesel(column_name="subjectId")]
-    pub subject_id: String,
-    #[diesel(column_name="subjectWeighting")]
-    pub subject_weighting: f64
+    #[serde(rename="subjectId")]
+    pub course_id: String,
+    pub subject_weighting: bigdecimal::BigDecimal
 }
 
 #[derive(Queryable, Selectable, Serialize, Associations, Insertable, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::course_subcomponent)]
 #[serde(rename_all="camelCase")]
-#[diesel(check_for_backend(diesel::mysql::Mysql))]
-#[diesel(belongs_to(CourseComponent, foreign_key=componentId))]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(belongs_to(CourseComponent, foreign_key=component_id))]
 pub struct CourseSubcomponent {
     pub id: String,
-    #[diesel(column_name="componentId")]
     pub component_id: String,
-    #[diesel(column_name="gradeValuePercentage")]
-    pub grade_value_percentage: f64,
-    #[diesel(column_name="isCompleted")]
+    pub grade_value_percentage: bigdecimal::BigDecimal,
     pub is_completed: bool,
-    #[diesel(column_name="numberInSequence")]
     pub number_in_sequence: i32,
-    #[diesel(column_name="overrideName")]
     pub override_name: Option<String>
 }
