@@ -1,2 +1,2 @@
-pub(crate) mod login;
 pub(crate) mod callback;
+pub(crate) mod login;

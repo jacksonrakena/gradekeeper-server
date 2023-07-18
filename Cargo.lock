@@ -352,16 +352,13 @@ dependencies = [
  "ipnetwork",
  "itoa",
  "libc",
- "mysqlclient-sys",
  "num-bigint",
  "num-integer",
  "num-traits",
- "percent-encoding",
  "pq-sys",
  "r2d2",
  "serde_json",
  "time 0.3.23",
- "url",
  "uuid",
 ]
 
@@ -872,16 +869,6 @@ dependencies = [
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys",
-]
-
-[[package]]
-name = "mysqlclient-sys"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f61b381528ba293005c42a409dd73d034508e273bf90481f17ec2e964a6e969b"
-dependencies = [
- "pkg-config",
- "vcpkg",
 ]
 
 [[package]]
