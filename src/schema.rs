@@ -51,7 +51,7 @@ diesel::table! {
         #[max_length = 191]
         id -> Varchar,
         grade_map -> Json,
-        created_at -> Timestamp,
+        created_at -> Timestamptz,
     }
 }
 
@@ -61,8 +61,8 @@ diesel::table! {
         id -> Varchar,
         #[max_length = 191]
         user_id -> Varchar,
-        start_date -> Timestamp,
-        end_date -> Timestamp,
+        start_date -> Timestamptz,
+        end_date -> Timestamptz,
         #[max_length = 191]
         name -> Varchar,
     }

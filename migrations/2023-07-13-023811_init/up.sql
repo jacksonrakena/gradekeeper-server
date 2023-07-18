@@ -2,7 +2,7 @@ CREATE TABLE gk_user
 (
     id         varchar(191) NOT NULL,
     grade_map  json         NOT NULL,
-    created_at timestamp  NOT NULL DEFAULT now(),
+    created_at timestamptz  NOT NULL DEFAULT now(),
     PRIMARY KEY (id)
 );
 
@@ -10,8 +10,8 @@ CREATE TABLE study_block
 (
     id         varchar(191) NOT NULL,
     user_id    varchar(191) NOT NULL,
-    start_date timestamp  NOT NULL,
-    end_date   timestamp  NOT NULL,
+    start_date timestamptz  NOT NULL,
+    end_date   timestamptz  NOT NULL,
     name       varchar(191) NOT NULL DEFAULT '',
     PRIMARY KEY (id),
     CONSTRAINT fk_user_owns_study_block FOREIGN KEY (user_id) REFERENCES gk_user (id)

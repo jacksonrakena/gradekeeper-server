@@ -117,7 +117,7 @@ pub async fn get_user<B>(Extension(user_session): Extension<Arc<Session>>, Exten
                   "0.75": "B+",
                   "0.85": "A",
                 }),
-                created_at: PrimitiveDateTime::new(OffsetDateTime::now_utc().date(), OffsetDateTime::now_utc().time()),
+                created_at: OffsetDateTime::now_utc()
             };
             insert_into(gk_user).values(&user).execute(con).unwrap();
             return Ok(Json(GetUser {

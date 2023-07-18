@@ -46,7 +46,9 @@ pub async fn create_block(
 #[serde(rename_all="camelCase")]
 #[derive(Deserialize, Serialize)]
 pub struct CreateBlock{
-    pub end_date: PrimitiveDateTime,
-    pub start_date: PrimitiveDateTime,
+    #[serde(with = "time::serde::rfc3339")]
+    pub end_date: OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339")]
+    pub start_date: OffsetDateTime,
     pub name: String
 }

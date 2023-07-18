@@ -10,7 +10,8 @@ use serde::Serialize;
 pub struct User {
     pub id: String,
     pub grade_map: serde_json::Value,
-    pub created_at: PrimitiveDateTime
+    #[serde(with = "time::serde::rfc3339")]
+    pub created_at: OffsetDateTime
 }
 #[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Insertable, Clone, Debug)]
 #[diesel(table_name = crate::schema::study_block)]
@@ -18,8 +19,10 @@ pub struct User {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(belongs_to(User))]
 pub struct StudyBlock {
-    pub end_date: PrimitiveDateTime,
-    pub start_date: PrimitiveDateTime,
+    #[serde(with = "time::serde::rfc3339")]
+    pub end_date: OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339")]
+    pub start_date: OffsetDateTime,
     pub id: String,
     pub name: String,
     pub user_id: String,
