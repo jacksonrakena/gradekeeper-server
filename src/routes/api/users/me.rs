@@ -4,7 +4,7 @@ use axum::{Extension, Json};
 use axum::http::{Request, StatusCode};
 use diesel::prelude::*;
 use serde::Serialize;
-use crate::errors::{AppError, AppErrorType};
+use crate::errors::{AppError};
 use crate::models::{StudyBlock, Course, User, CourseComponent, CourseSubcomponent};
 use crate::routes::api::auth::callback::Session;
 use crate::ServerState;
@@ -48,7 +48,6 @@ pub async fn get_user<B>(Extension(user_session): Extension<Arc<Session>>, Exten
         .find(user_session.id.clone())
         .select(User::as_select())
         .first(con) else { return Err(AppError {
-            name: AppErrorType::UnknownServerError,
             status_code: StatusCode::NOT_FOUND,
             description: format!("User not found."),
     }) };

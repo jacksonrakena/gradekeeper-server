@@ -11,7 +11,7 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use time::Duration;
-use crate::errors::{AppError, AppErrorType};
+use crate::errors::{AppError};
 use crate::middleware::auth::COOKIE_NAME;
 use crate::ServerState;
 
@@ -56,7 +56,6 @@ pub struct Session {
 pub async fn handle_auth_callback(Query(data): Query<CallbackData>, Extension(state): Extension<Arc<ServerState>>)
     -> Result<Response, AppError> {
     let Some(code) = data.code else { return Err(AppError {
-        name: AppErrorType::NotAuthorized,
         status_code: StatusCode::UNAUTHORIZED,
         description: "Failed to authorize with Google.".to_string(),
     }) };
@@ -69,7 +68,7 @@ pub async fn handle_auth_callback(Query(data): Query<CallbackData>, Extension(st
             client_secret: state.config.google_client_secret.clone(),
             code,
             grant_type: "authorization_code".to_string(),
-            redirect_uri: "http://localhost:3001/api/auth/callback".to_string()
+            redirect_uri: "http://localhost:3000/api/auth/callback".to_string()
         }).unwrap()))
         .send().await.unwrap().json::<TokenResponse>().await.unwrap();
 
@@ -81,7 +80,6 @@ pub async fn handle_auth_callback(Query(data): Query<CallbackData>, Extension(st
 
     let now = chrono::Utc::now();
     if !info_request.email_verified { return Err(AppError {
-        name: AppErrorType::InvalidRequest,
         status_code: StatusCode::BAD_REQUEST,
         description: "You have not verified your email with Google.".to_string(),
     }); };
@@ -99,7 +97,7 @@ pub async fn handle_auth_callback(Query(data): Query<CallbackData>, Extension(st
     let cookie = Cookie::build(COOKIE_NAME, token.to_owned())
         .path("/")
         .max_age(Duration::minutes(state.config.jwt_maxage))
-        .same_site(SameSite::Lax)
+        .same_site(SameSite::None)
         .http_only(false)
         .finish();
 

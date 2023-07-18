@@ -5,12 +5,13 @@ mod middleware;
 mod errors;
 mod config;
 use std::env;
-use std::iter::{once};
+use std::iter::once;
 use std::sync::Arc;
 use axum::{Router, routing::{get, post},};
-use axum::http::{Method};
+use axum::handler::Handler;
+use axum::http::Method;
 use axum::http::header::AUTHORIZATION;
-use diesel::{MysqlConnection};
+use diesel::MysqlConnection;
 use dotenvy::dotenv;
 use log::{error, info, Level, LevelFilter};
 
@@ -20,13 +21,14 @@ use diesel::r2d2::{ConnectionManager, Pool};
 
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
-use tower_http::{add_extension::AddExtensionLayer};
+use tower_http::add_extension::AddExtensionLayer;
 use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
 use tracing_subscriber::filter::Targets;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use routes::api;
 use crate::config::Config;
-use crate::middleware::auth::check_authorization;
+use crate::middleware::auth::{check_authorization, validate_ownership_of_block, validate_ownership_of_block_and_course};
 
 pub struct ServerState {
     db_pool: Pool<ConnectionManager<MysqlConnection>>,
@@ -58,20 +60,25 @@ async fn main() {
         // Users
         .route("/api/users/me", get(crate::routes::api::users::me::get_user))
         // Blocks
-        .route("/block/create", post(routes::api::block::create::create_block))
-        .route("/block/:block_id", get(routes::api::block::block_id::get_block))
-        .route("/block/:block_id", axum::routing::delete(routes::api::block::block_id::delete_block))
-        .route("/block/:block_id/import", post(routes::api::block::_block_id::import::import_block))
+        .route("/api/block/create", post(routes::api::block::create::create_block))
+        .route("/api/block/:block_id", axum::routing::delete(routes::api::block::block_id::delete_block))
+        .route("/api/block/:block_id/import", post(routes::api::block::_block_id::import::import_course)
+            .layer(axum::middleware::from_fn(validate_ownership_of_block)))
 
         // Courses
-        .route("/block/:block_id/course/create", post(routes::api::block::course::create::create_course))
-        .route("/block/:block_id/course/:course_id", get(routes::api::block::course::course_id::get_course))
-        .route("/block/:block_id/course/:course_id", axum::routing::delete(routes::api::block::course::course_id::delete_course))
-        .route("/block/:block_id/course/:course_id", post(routes::api::block::course::course_id::update_course))
+        .route("/api/block/:block_id/course/create", post(api::block::_block_id::course::create::create_course)
+            .layer(axum::middleware::from_fn(validate_ownership_of_block)))
+        .route("/api/block/:block_id/course/:course_id", get(api::block::_block_id::course::course_id::get_course)
+            .layer(axum::middleware::from_fn(validate_ownership_of_block_and_course)))
+        .route("/api/block/:block_id/course/:course_id", axum::routing::delete(api::block::_block_id::course::course_id::delete_course)
+            .layer(axum::middleware::from_fn(validate_ownership_of_block_and_course)))
+        .route("/api/block/:block_id/course/:course_id", post(api::block::_block_id::course::course_id::update_course)
+            .layer(axum::middleware::from_fn(validate_ownership_of_block_and_course)))
 
         // Components
-        .route("/block/:block_id/course/:course_id/component/:component_id",
-               post(routes::api::block::course::_course_id::component::component_id::update_course_component)
+        .route("/api/block/:block_id/course/:course_id/component/:component_id",
+               post(api::block::_block_id::course::_course_id::component::component_id::update_course_component)
+                   .layer(axum::middleware::from_fn(validate_ownership_of_block))
         )
         .layer(axum::middleware::from_fn(check_authorization))
         // End authorised section
@@ -85,7 +92,7 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .layer(AddExtensionLayer::new(Arc::new(initial_state)));
 
-    let server = axum::Server::bind(&"0.0.0.0:3001".parse().unwrap())
+    let server = axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
         .serve(app.into_make_service());
 
     if let Err(err) = server.await {

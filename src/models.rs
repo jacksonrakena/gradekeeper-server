@@ -12,7 +12,7 @@ pub struct User {
     #[diesel(column_name="gradeMap")]
     pub grade_map: String
 }
-#[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Clone, Debug)]
+#[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Insertable, Clone, Debug)]
 #[diesel(table_name = crate::schema::study_block)]
 #[serde(rename_all="camelCase")]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
@@ -29,7 +29,7 @@ pub struct StudyBlock {
     #[diesel(column_name="userId")]
     pub user_id: String,
 }
-#[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Clone, Debug)]
+#[derive(Queryable, Selectable, Serialize, Associations, Insertable, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::course)]
 #[serde(rename_all="camelCase")]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
@@ -46,7 +46,7 @@ pub struct Course {
     pub study_block_id: String,
     pub color: String,
 }
-#[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Clone, Debug)]
+#[derive(Queryable, Selectable, Serialize, Associations, Insertable, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::course_component)]
 #[serde(rename_all="camelCase")]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
@@ -65,7 +65,7 @@ pub struct CourseComponent {
     pub subject_weighting: f64
 }
 
-#[derive(Queryable, Selectable, Serialize, Associations, Identifiable, Clone, Debug)]
+#[derive(Queryable, Selectable, Serialize, Associations, Insertable, Identifiable, Clone, Debug)]
 #[diesel(table_name = crate::schema::course_subcomponent)]
 #[serde(rename_all="camelCase")]
 #[diesel(check_for_backend(diesel::mysql::Mysql))]
