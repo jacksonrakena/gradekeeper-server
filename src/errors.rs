@@ -51,8 +51,8 @@ impl IntoResponse for AppError {
         (
             self.status_code,
             Json(json![{
-                "error_type": self.status_code.as_u16(),
-                "error_description": self.description
+                "type": self.status_code.as_u16(),
+                "error": self.description
             }]),
         )
             .into_response()
