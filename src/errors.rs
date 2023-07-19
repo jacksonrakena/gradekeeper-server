@@ -33,6 +33,12 @@ impl AppError {
             description: "That resource was not found.".to_string(),
         }
     }
+    pub fn bad_request<D: ToString>(message: D) -> AppError {
+        AppError {
+            status_code: StatusCode::BAD_REQUEST,
+            description: message.to_string()
+        }
+    }
 }
 
 impl<T> Into<Result<T, AppError>> for AppError {
