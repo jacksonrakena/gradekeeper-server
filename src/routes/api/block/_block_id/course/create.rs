@@ -62,7 +62,6 @@ fn validate(course_data: &CreateCourse) -> Result<(), AppError> {
     Ok(())
 }
 
-#[debug_handler]
 pub async fn create_course(
     Path(_block_id): Path<String>,
     Extension(state): Extension<Arc<ServerState>>,
