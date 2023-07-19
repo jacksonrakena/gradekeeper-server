@@ -1,5 +1,5 @@
-use axum::extract::Query;
-use axum::http::StatusCode;
+use axum::extract::{Host, Query};
+use axum::http::{Request, StatusCode, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Extension;
 use axum_extra::extract::cookie::{Cookie, SameSite};
@@ -7,6 +7,7 @@ use hyper::header::{AUTHORIZATION, CONTENT_TYPE};
 use hyper::{header, Body};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use std::sync::Arc;
+use axum::http::uri::Scheme;
 
 use serde::{Deserialize, Serialize};
 
@@ -53,6 +54,7 @@ pub struct Session {
 pub async fn handle_auth_callback(
     Query(data): Query<CallbackData>,
     Extension(state): Extension<Arc<ServerState>>,
+    Host(host): Host
 ) -> Result<Response, AppError> {
     let Some(code) = data.code else { return Err(AppError {
         status_code: StatusCode::UNAUTHORIZED,
@@ -69,7 +71,7 @@ pub async fn handle_auth_callback(
                 client_secret: state.config.google_client_secret.clone(),
                 code,
                 grant_type: "authorization_code".to_string(),
-                redirect_uri: "http://localhost:3000/api/auth/callback".to_string(),
+                redirect_uri: Uri::builder().scheme(Scheme::HTTPS).authority(host).path_and_query("/api/auth/callback").build().unwrap().to_string(),
             })
             .unwrap(),
         ))
