@@ -8,7 +8,7 @@ pub struct Config {
     pub jwt_maxage: i64,
     pub google_client_id: String,
     pub google_client_secret: String,
-    pub client_redirect_url: String,
+    pub client_redirect_url: Option<String>,
 }
 
 impl Config {
@@ -22,7 +22,7 @@ impl Config {
                 .expect("Cannot parse JWT_MAXAGE into i32"),
             google_client_id: Config::expect_var("GOOGLE_CLIENT_ID"),
             google_client_secret: Config::expect_var("GOOGLE_CLIENT_SECRET"),
-            client_redirect_url: Config::expect_var("CLIENT_REDIRECT_URL"),
+            client_redirect_url: Config::optional_var("CLIENT_REDIRECT_URL"),
         }
     }
 
@@ -31,5 +31,9 @@ impl Config {
             Ok(v) => v,
             Err(e) => panic!("Expected environment variable '{}' to be set: {}", name, e),
         }
+    }
+
+    fn optional_var(name: &'static str) -> Option<String> {
+        env::var(name).ok()
     }
 }
