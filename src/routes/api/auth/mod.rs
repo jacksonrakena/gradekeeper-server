@@ -25,6 +25,7 @@ pub fn determine_callback_url(host: String, state: &Arc<ServerState>) -> String 
             Uri::builder()
                 .scheme(Scheme::HTTPS)
                 .authority(host)
+                .path_and_query("/")
                 .build()
                 .unwrap()
                 .into_parts()

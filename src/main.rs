@@ -66,6 +66,8 @@ async fn main() {
     let app = Router::new()
         // Users
         .route("/api/users/me", get(crate::routes::api::users::me::get_user))
+        .route("/api/users/me", post(api::users::me::update_user))
+        .route("/api/users/me", axum::routing::delete(api::users::me::delete_user))
         // Blocks
         .route("/api/block/create", post(routes::api::block::create::create_block))
         .route("/api/block/:block_id", axum::routing::delete(routes::api::block::block_id::delete_block))

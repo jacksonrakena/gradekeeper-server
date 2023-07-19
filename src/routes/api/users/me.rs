@@ -6,11 +6,13 @@ use crate::models::{Course, CourseComponent, CourseSubcomponent, StudyBlock, Use
 use crate::routes::api::auth::callback::Session;
 use crate::schema::gk_user::dsl::gk_user;
 use crate::ServerState;
-use diesel::insert_into;
+use diesel::{delete, insert_into, update};
 use diesel::prelude::*;
-use serde::Serialize;
+use hyper::StatusCode;
+use serde::{Serialize,Deserialize};
 use serde_json::json;
 use time::OffsetDateTime;
+use crate::schema::gk_user::{grade_map, id};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -130,5 +132,35 @@ pub async fn get_user<B>(
             }));
         }
         Err(e) => return AppError::database_ise(e).into(),
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all="camelCase")]
+pub struct UpdateUser {
+    pub grade_map: serde_json::Value
+}
+pub async fn update_user(Extension(user_session): Extension<Arc<Session>>,
+                         Extension(state): Extension<Arc<ServerState>>,
+                         Json(data): Json<UpdateUser>) -> Result<StatusCode, AppError> {
+    let con = &mut state.db_pool.get().unwrap();
+
+    let result = update(gk_user.filter(id.eq(&user_session.id))).set(grade_map.eq(data.grade_map)).execute(con).unwrap();
+
+    match result {
+        1 => Ok(StatusCode::OK),
+        _ => Err(AppError::bad_request("Couldn't find a user to update."))
+    }
+}
+
+pub async fn delete_user(Extension(user_session): Extension<Arc<Session>>,
+                         Extension(state): Extension<Arc<ServerState>>) -> Result<StatusCode, AppError> {
+    let con = &mut state.db_pool.get().unwrap();
+
+    let result = delete(gk_user.filter(id.eq(&user_session.id))).execute(con).unwrap();
+
+    match result {
+        1 => Ok(StatusCode::OK),
+        _ => Err(AppError::bad_request("Couldn't find a user to delete."))
     }
 }
