@@ -42,9 +42,9 @@ pub struct GetUserCourse {
 #[serde(rename_all = "camelCase")]
 pub struct GetUserComponent {
     #[serde(flatten)]
-    component: crate::models::CourseComponent,
+    pub component: crate::models::CourseComponent,
 
-    subcomponents: Vec<crate::models::CourseSubcomponent>,
+    pub subcomponents: Vec<crate::models::CourseSubcomponent>,
 }
 
 pub async fn get_user<B>(

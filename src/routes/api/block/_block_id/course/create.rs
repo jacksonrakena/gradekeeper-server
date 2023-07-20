@@ -4,7 +4,7 @@ use std::sync::Arc;
 use axum::extract::Path;
 use axum::{Extension, Json};
 use axum_macros::debug_handler;
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal, Zero};
 use cuid2::cuid;
 use diesel::{Connection, RunQueryDsl};
 
@@ -99,10 +99,7 @@ pub async fn create_course(
                     let new_subcomponent = CourseSubcomponent {
                         id: cuid(),
                         component_id: new_component_id.clone(),
-                        grade_value_percentage: new_component
-                            .subject_weighting
-                            .clone()
-                            .div(n_subc.clone()),
+                        grade_value_percentage: BigDecimal::zero(),
                         is_completed: false,
                         number_in_sequence: i,
                         override_name: None,

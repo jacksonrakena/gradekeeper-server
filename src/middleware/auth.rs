@@ -49,6 +49,13 @@ pub async fn validate_ownership_of_block_and_course<B>(
     AppError::resource_access_denied().into()
 }
 
+pub async fn validate_ownership_of_block_course_component<B>(Path((_block_id, _course_id, _component_id)): Path<(String,String,String)>,
+                                                             Extension(session): Extension<Arc<Session>>,
+                                                             Extension(state): Extension<Arc<ServerState>>,
+                                                             request: Request<B>,
+                                                             next: Next<B>) -> Result<Response, AppError> {
+    validate_ownership_of_block(Path(_block_id), Extension(session), Extension(state), request, next).await
+}
 pub async fn validate_ownership_of_block<B>(
     Path(_block_id): Path<String>,
     Extension(session): Extension<Arc<Session>>,

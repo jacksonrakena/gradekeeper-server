@@ -17,33 +17,21 @@ pub async fn create_block(
     Json(payload): Json<CreateBlock>,
 ) -> Result<Json<StudyBlock>, AppError> {
     let con = &mut state.db_pool.get().unwrap();
-    let id = cuid2::create_id();
     let block = StudyBlock {
         end_date: payload.end_date,
         start_date: payload.start_date,
-        id: id.clone(),
+        id: cuid2::create_id(),
         name: payload.name,
         user_id: user.id.clone(),
     };
 
     insert_into(study_block)
-        .values(block)
+        .values(&block)
         .execute(con)
         .or_else(|e| {
             Err(AppError {
                 status_code: StatusCode::INTERNAL_SERVER_ERROR,
                 description: format!("Could not create study block: {}", e),
-            })
-        })?;
-
-    let block = study_block
-        .find(id)
-        .select(StudyBlock::as_select())
-        .first(con)
-        .or_else(|e| {
-            Err(AppError {
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                description: format!("Could not load created study block: {}", e),
             })
         })?;
 

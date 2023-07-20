@@ -5,17 +5,15 @@ mod models;
 mod routes;
 mod schema;
 use crate::config::Config;
-use crate::middleware::auth::{
-    check_authorization, validate_ownership_of_block, validate_ownership_of_block_and_course,
-};
+use crate::middleware::auth::{check_authorization, validate_ownership_of_block, validate_ownership_of_block_and_course, validate_ownership_of_block_course_component};
 use axum::http::header::AUTHORIZATION;
-use axum::http::Method;
+use axum::http::{Method, StatusCode};
 use axum::{
     routing::{get, post},
     Router,
 };
 use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use log::{error, info};
 use routes::api;
 use std::env;
@@ -28,10 +26,19 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::Targets;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use crate::errors::AppError;
 
 pub struct ServerState {
     db_pool: Pool<ConnectionManager<PgConnection>>,
     config: Config,
+}
+
+impl ServerState {
+    fn get_db_con(&self) -> Result<PooledConnection<ConnectionManager<PgConnection>>, AppError> {
+        self.db_pool.get().map_err(|e|AppError{
+            status_code: StatusCode::INTERNAL_SERVER_ERROR, description: "Unable to connect to the Gradekeeper database.".to_string()
+        })
+    }
 }
 
 #[tokio::main]
@@ -87,7 +94,7 @@ async fn main() {
         // Components
         .route("/api/block/:block_id/course/:course_id/component/:component_id",
                post(api::block::_block_id::course::_course_id::component::component_id::update_course_component)
-                   .layer(axum::middleware::from_fn(validate_ownership_of_block))
+                   .layer(axum::middleware::from_fn(validate_ownership_of_block_course_component))
         )
         .layer(axum::middleware::from_fn(check_authorization))
         // End authorised section

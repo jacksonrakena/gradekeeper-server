@@ -22,6 +22,7 @@ pub async fn update_course(
 ) -> StatusCode {
     StatusCode::NOT_FOUND
 }
+
 pub async fn delete_course(
     Path((_block_id, _course_id)): Path<(String, String)>,
     Extension(state): Extension<Arc<ServerState>>,
