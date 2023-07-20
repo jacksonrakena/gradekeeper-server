@@ -6,6 +6,7 @@ use axum::{Extension, Json};
 
 use bigdecimal::{BigDecimal, Zero};
 use cuid2::cuid;
+use diesel::result::Error;
 use diesel::{Connection, RunQueryDsl};
 
 use crate::errors::AppError;
@@ -48,6 +49,15 @@ fn validate(course_data: &CreateCourse) -> Result<(), AppError> {
     if course_data
         .components
         .iter()
+        .any(|c| c.number_of_subcomponents.parse::<i32>().is_err())
+    {
+        return Err(AppError::bad_request(
+            "Number of subcomponents must be a number.",
+        ));
+    }
+    if course_data
+        .components
+        .iter()
         .map(|d| d.number_of_subcomponents.parse::<i32>().unwrap())
         .reduce(|a, b| a + b)
         .unwrap_or(0)
@@ -82,57 +92,55 @@ pub async fn create_course(
     let con = &mut state.get_db_con()?;
 
     validate(&course_data)?;
-    let id = con
-        .transaction(|con| {
-            let course_id = cuid();
-            let new_course = Course {
-                id: course_id.clone(),
-                long_name: course_data.name,
-                course_code_name: course_data.course_code_name,
-                course_code_number: course_data.course_code_number,
-                block_id: _block_id,
-                color: course_data.color,
+    let id = con.transaction(|con| {
+        let course_id = cuid();
+        let new_course = Course {
+            id: course_id.clone(),
+            long_name: course_data.name,
+            course_code_name: course_data.course_code_name,
+            course_code_number: course_data.course_code_number,
+            block_id: _block_id,
+            color: course_data.color,
+        };
+
+        let mut new_components: Vec<CourseComponent> = vec![];
+        let mut new_subcomponents: Vec<CourseSubcomponent> = vec![];
+        for component in course_data.components {
+            let new_component_id = cuid();
+            let new_component = CourseComponent {
+                id: new_component_id.clone(),
+                name: component.name,
+                course_id: course_id.clone(),
+                subject_weighting: component.weighting,
+                number_of_subcomponents_to_drop_lowest: component.drop_lowest,
+                name_of_subcomponent_singular: "".to_string(),
             };
-
-            let mut new_components: Vec<CourseComponent> = vec![];
-            let mut new_subcomponents: Vec<CourseSubcomponent> = vec![];
-            for component in course_data.components {
-                let new_component_id = cuid();
-                let new_component = CourseComponent {
-                    id: new_component_id.clone(),
-                    name: component.name,
-                    course_id: course_id.clone(),
-                    subject_weighting: component.weighting,
-                    number_of_subcomponents_to_drop_lowest: component.drop_lowest,
-                    name_of_subcomponent_singular: "".to_string(),
+            let n_subc = component.number_of_subcomponents.parse::<i32>().unwrap();
+            for i in 1..(n_subc + 1) {
+                let new_subcomponent = CourseSubcomponent {
+                    id: cuid(),
+                    component_id: new_component_id.clone(),
+                    grade_value_percentage: BigDecimal::zero(),
+                    is_completed: false,
+                    number_in_sequence: i,
+                    override_name: None,
                 };
-                let n_subc = component.number_of_subcomponents.parse::<i32>().unwrap();
-                for i in 1..(n_subc + 1) {
-                    let new_subcomponent = CourseSubcomponent {
-                        id: cuid(),
-                        component_id: new_component_id.clone(),
-                        grade_value_percentage: BigDecimal::zero(),
-                        is_completed: false,
-                        number_in_sequence: i,
-                        override_name: None,
-                    };
-                    new_subcomponents.push(new_subcomponent);
-                }
-                new_components.push(new_component);
+                new_subcomponents.push(new_subcomponent);
             }
+            new_components.push(new_component);
+        }
 
-            diesel::insert_into(course)
-                .values(&new_course)
-                .execute(con)?;
-            diesel::insert_into(course_component)
-                .values(&new_components)
-                .execute(con)?;
-            diesel::insert_into(course_subcomponent)
-                .values(&new_subcomponents)
-                .execute(con)?;
-            diesel::result::QueryResult::Ok(course_id)
-        })
-        .unwrap();
+        diesel::insert_into(course)
+            .values(&new_course)
+            .execute(con)?;
+        diesel::insert_into(course_component)
+            .values(&new_components)
+            .execute(con)?;
+        diesel::insert_into(course_subcomponent)
+            .values(&new_subcomponents)
+            .execute(con)?;
+        Ok::<String, Error>(course_id)
+    })?;
 
     Ok(Json(CreateCourseResponse { id }))
 }

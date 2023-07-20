@@ -3,12 +3,20 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use diesel::result::Error;
 use log::error;
+use std::convert::From;
 
 use serde_json::json;
+
+pub type AppResult<R> = Result<R, AppError>;
 
 pub struct AppError {
     pub(crate) status_code: StatusCode,
     pub(crate) description: String,
+}
+impl From<Error> for AppError {
+    fn from(value: Error) -> Self {
+        AppError::database_ise(value)
+    }
 }
 impl AppError {
     pub fn resource_access_denied() -> AppError {

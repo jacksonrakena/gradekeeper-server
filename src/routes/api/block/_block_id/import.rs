@@ -84,18 +84,13 @@ pub(crate) async fn import_course(
         }
     }
 
-    insert_into(course)
-        .values(&new_course)
-        .execute(con)
-        .unwrap();
+    insert_into(course).values(&new_course).execute(con)?;
     insert_into(course_component)
         .values(components)
-        .execute(con)
-        .unwrap();
+        .execute(con)?;
     insert_into(course_subcomponent)
         .values(subcomponents)
-        .execute(con)
-        .unwrap();
+        .execute(con)?;
 
     Ok(Json(new_course))
 }

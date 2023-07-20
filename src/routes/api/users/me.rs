@@ -33,9 +33,9 @@ pub struct GetUserStudyBlock {
 #[serde(rename_all = "camelCase")]
 pub struct GetUserCourse {
     #[serde(flatten)]
-    course: Course,
+    pub course: Course,
 
-    components: Vec<GetUserComponent>,
+    pub components: Vec<GetUserComponent>,
 }
 
 #[derive(Serialize)]
@@ -62,20 +62,16 @@ pub async fn get_user<B>(
         Ok(user) => {
             let study_blocks = StudyBlock::belonging_to(&user)
                 .select(StudyBlock::as_select())
-                .load(con)
-                .unwrap();
+                .load(con)?;
             let courses = Course::belonging_to(&study_blocks)
                 .select(Course::as_select())
-                .load(con)
-                .unwrap();
+                .load(con)?;
             let components = CourseComponent::belonging_to(&courses)
                 .select(CourseComponent::as_select())
-                .load(con)
-                .unwrap();
+                .load(con)?;
             let subcomponents = CourseSubcomponent::belonging_to(&components)
                 .select(CourseSubcomponent::as_select())
-                .load(con)
-                .unwrap();
+                .load(con)?;
 
             Ok(Json(GetUser {
                 grade_map: user.grade_map,
@@ -125,7 +121,7 @@ pub async fn get_user<B>(
                 }),
                 created_at: OffsetDateTime::now_utc(),
             };
-            insert_into(gk_user).values(&user).execute(con).unwrap();
+            insert_into(gk_user).values(&user).execute(con)?;
             return Ok(Json(GetUser {
                 grade_map: user.grade_map,
                 study_blocks: vec![],
@@ -149,8 +145,7 @@ pub async fn update_user(
 
     let result = update(gk_user.filter(id.eq(&user_session.id)))
         .set(grade_map.eq(data.grade_map))
-        .execute(con)
-        .unwrap();
+        .execute(con)?;
 
     match result {
         1 => Ok(StatusCode::OK),
@@ -164,9 +159,7 @@ pub async fn delete_user(
 ) -> Result<StatusCode, AppError> {
     let con = &mut state.get_db_con()?;
 
-    let result = delete(gk_user.filter(id.eq(&user_session.id)))
-        .execute(con)
-        .unwrap();
+    let result = delete(gk_user.filter(id.eq(&user_session.id))).execute(con)?;
 
     match result {
         1 => Ok(StatusCode::OK),
