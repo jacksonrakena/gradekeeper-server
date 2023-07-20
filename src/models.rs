@@ -58,7 +58,6 @@ pub struct CourseComponent {
     pub name_of_subcomponent_singular: String,
     #[serde(rename = "numberOfSubComponentsToDrop_Lowest")]
     pub number_of_subcomponents_to_drop_lowest: i32,
-    #[serde(rename = "subjectId")]
     pub course_id: String,
     pub subject_weighting: bigdecimal::BigDecimal,
 }

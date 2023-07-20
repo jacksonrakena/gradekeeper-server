@@ -27,7 +27,6 @@ pub struct GetUser {
 pub struct GetUserStudyBlock {
     #[serde(flatten)]
     study_block: StudyBlock,
-    #[serde(rename = "subjects")]
     courses: Vec<GetUserCourse>,
 }
 
