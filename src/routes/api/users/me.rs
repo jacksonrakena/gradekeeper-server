@@ -1,12 +1,6 @@
-use axum::{Extension, Json};
 use std::sync::Arc;
 
-use crate::errors::AppError;
-use crate::models::{Course, CourseComponent, CourseSubcomponent, StudyBlock, User};
-use crate::routes::api::auth::callback::Session;
-use crate::schema::gk_user::dsl::gk_user;
-use crate::schema::gk_user::{grade_map, id};
-use crate::ServerState;
+use axum::{Extension, Json};
 use diesel::prelude::*;
 use diesel::{delete, insert_into, update};
 use hyper::StatusCode;
@@ -14,12 +8,20 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use time::OffsetDateTime;
 
+use crate::errors::AppError;
+use crate::models::{Course, CourseComponent, CourseSubcomponent, StudyBlock, User};
+use crate::routes::api::auth::callback::Session;
+use crate::schema::gk_user::dsl::gk_user;
+use crate::schema::gk_user::{grade_map, id};
+use crate::ServerState;
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetUser {
     grade_map: serde_json::Value,
     study_blocks: Vec<GetUserStudyBlock>,
 }
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetUserStudyBlock {
@@ -54,7 +56,7 @@ pub async fn get_user<B>(
 ) -> Result<Json<GetUser>, AppError> {
     let con = &mut state.get_db_con()?;
 
-    match crate::schema::gk_user::dsl::gk_user
+    match gk_user
         .find(user_session.id.clone())
         .select(User::as_select())
         .first(con)
@@ -136,6 +138,7 @@ pub async fn get_user<B>(
 pub struct UpdateUser {
     pub grade_map: serde_json::Value,
 }
+
 pub async fn update_user(
     Extension(user_session): Extension<Arc<Session>>,
     Extension(state): Extension<Arc<ServerState>>,
