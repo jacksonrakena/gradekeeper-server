@@ -27,7 +27,7 @@ pub async fn delete_course(
     Path((_block_id, _course_id)): Path<(String, String)>,
     Extension(state): Extension<Arc<ServerState>>,
 ) -> Result<Response, AppError> {
-    let con = &mut state.db_pool.get().unwrap();
+    let con = &mut state.get_db_con()?;
     let result = delete(course.filter(id.eq(_course_id)))
         .execute(con)
         .or_else(|e| AppError::database_ise(e).into())?;

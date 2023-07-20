@@ -67,7 +67,7 @@ pub async fn create_course(
     Extension(state): Extension<Arc<ServerState>>,
     Json(course_data): Json<CreateCourse>,
 ) -> Result<Json<CreateCourseResponse>, AppError> {
-    let con = &mut state.db_pool.get().unwrap();
+    let con = &mut state.get_db_con()?;
 
     validate(&course_data)?;
     let id = con

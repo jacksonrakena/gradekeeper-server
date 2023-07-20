@@ -16,7 +16,7 @@ pub async fn create_block(
     Extension(state): Extension<Arc<ServerState>>,
     Json(payload): Json<CreateBlock>,
 ) -> Result<Json<StudyBlock>, AppError> {
-    let con = &mut state.db_pool.get().unwrap();
+    let con = &mut state.get_db_con()?;
     let block = StudyBlock {
         end_date: payload.end_date,
         start_date: payload.start_date,

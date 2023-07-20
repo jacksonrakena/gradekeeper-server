@@ -27,7 +27,7 @@ pub(crate) async fn import_course(
     Extension(_session): Extension<Arc<Session>>,
     Json(course_request): Json<ImportCourse>,
 ) -> Result<Json<Course>, AppError> {
-    let con = &mut state.db_pool.get().unwrap();
+    let con = &mut state.get_db_con()?;
     let original_course = course
         .find(&course_request.share_code)
         .select(Course::as_select())

@@ -25,13 +25,13 @@ async fn _validate_ownership_of_block(
     _block_id: &String,
     session: Arc<Session>,
     state: Arc<ServerState>,
-) -> Option<StudyBlock> {
-    let con = &mut state.db_pool.get().unwrap();
-    study_block
+) -> Result<Option<StudyBlock>,AppError> {
+    let con = &mut state.get_db_con()?;
+    Ok(study_block
         .filter(id.eq(_block_id.clone()).and(user_id.eq(session.id.clone())))
         .select(StudyBlock::as_select())
         .first(con)
-        .ok()
+        .ok())
 }
 pub async fn validate_ownership_of_block_and_course<B>(
     Path((_block_id, _course_id)): Path<(String, String)>,
@@ -41,7 +41,7 @@ pub async fn validate_ownership_of_block_and_course<B>(
     next: Next<B>,
 ) -> Result<Response, AppError> {
     if _validate_ownership_of_block(&_block_id, session, state)
-        .await
+        .await?
         .is_some()
     {
         return Ok(next.run(request).await);
@@ -64,7 +64,7 @@ pub async fn validate_ownership_of_block<B>(
     next: Next<B>,
 ) -> Result<Response, AppError> {
     if _validate_ownership_of_block(&_block_id, session, state)
-        .await
+        .await?
         .is_some()
     {
         return Ok(next.run(request).await);

@@ -14,7 +14,7 @@ pub async fn delete_block(
     Extension(state): Extension<Arc<ServerState>>,
     Extension(session): Extension<Arc<Session>>,
 ) -> Result<(), AppError> {
-    let con = &mut state.db_pool.get().unwrap();
+    let con = &mut state.get_db_con()?;
 
     let rows = diesel::delete(study_block)
         .filter(id.eq(_id).and(user_id.eq(session.id.clone())))

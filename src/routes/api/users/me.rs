@@ -52,7 +52,7 @@ pub async fn get_user<B>(
     Extension(state): Extension<Arc<ServerState>>,
     _req: axum::http::Request<B>,
 ) -> Result<Json<GetUser>, AppError> {
-    let con = &mut state.db_pool.get().unwrap();
+    let con = &mut state.get_db_con()?;
 
     match crate::schema::gk_user::dsl::gk_user
         .find(user_session.id.clone())
@@ -143,7 +143,7 @@ pub struct UpdateUser {
 pub async fn update_user(Extension(user_session): Extension<Arc<Session>>,
                          Extension(state): Extension<Arc<ServerState>>,
                          Json(data): Json<UpdateUser>) -> Result<StatusCode, AppError> {
-    let con = &mut state.db_pool.get().unwrap();
+    let con = &mut state.get_db_con()?;
 
     let result = update(gk_user.filter(id.eq(&user_session.id))).set(grade_map.eq(data.grade_map)).execute(con).unwrap();
 
@@ -155,7 +155,7 @@ pub async fn update_user(Extension(user_session): Extension<Arc<Session>>,
 
 pub async fn delete_user(Extension(user_session): Extension<Arc<Session>>,
                          Extension(state): Extension<Arc<ServerState>>) -> Result<StatusCode, AppError> {
-    let con = &mut state.db_pool.get().unwrap();
+    let con = &mut state.get_db_con()?;
 
     let result = delete(gk_user.filter(id.eq(&user_session.id))).execute(con).unwrap();
 
