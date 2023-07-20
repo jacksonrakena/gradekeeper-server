@@ -36,7 +36,7 @@ impl AppError {
     pub fn bad_request<D: ToString>(message: D) -> AppError {
         AppError {
             status_code: StatusCode::BAD_REQUEST,
-            description: message.to_string()
+            description: message.to_string(),
         }
     }
 }

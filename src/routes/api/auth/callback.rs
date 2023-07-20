@@ -16,6 +16,7 @@ use crate::routes::api::auth::{determine_callback_url, determine_redirect_url};
 use crate::ServerState;
 use time::Duration;
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct CallbackData {
     error: Option<String>,

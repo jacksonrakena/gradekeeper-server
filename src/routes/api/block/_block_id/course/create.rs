@@ -1,9 +1,9 @@
-use std::ops::{Add, Div};
+use std::ops::Add;
 use std::sync::Arc;
 
 use axum::extract::Path;
 use axum::{Extension, Json};
-use axum_macros::debug_handler;
+
 use bigdecimal::{BigDecimal, Zero};
 use cuid2::cuid;
 use diesel::{Connection, RunQueryDsl};
@@ -45,18 +45,30 @@ pub struct CreateCourseComponent {
 }
 
 fn validate(course_data: &CreateCourse) -> Result<(), AppError> {
-    if course_data.components.iter()
-        .map(|d|d.number_of_subcomponents.parse::<i32>().unwrap())
-        .reduce(|a,b|a+b)
-        .unwrap_or(0) > 100 {
-        return Err(AppError::bad_request("Total number of subcomponents must not exceed 100."))
+    if course_data
+        .components
+        .iter()
+        .map(|d| d.number_of_subcomponents.parse::<i32>().unwrap())
+        .reduce(|a, b| a + b)
+        .unwrap_or(0)
+        > 100
+    {
+        return Err(AppError::bad_request(
+            "Total number of subcomponents must not exceed 100.",
+        ));
     }
 
-    if course_data.components.iter()
-        .map(|d|d.weighting.clone())
-        .reduce(|a,b|a.add(b))
-        .unwrap_or(BigDecimal::from(0)).ne(&BigDecimal::from(1)) {
-        return Err(AppError::bad_request("Course components must add up to 100%."))
+    if course_data
+        .components
+        .iter()
+        .map(|d| d.weighting.clone())
+        .reduce(|a, b| a.add(b))
+        .unwrap_or(BigDecimal::from(0))
+        .ne(&BigDecimal::from(1))
+    {
+        return Err(AppError::bad_request(
+            "Course components must add up to 100%.",
+        ));
     }
 
     Ok(())

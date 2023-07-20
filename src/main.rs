@@ -5,7 +5,11 @@ mod models;
 mod routes;
 mod schema;
 use crate::config::Config;
-use crate::middleware::auth::{check_authorization, validate_ownership_of_block, validate_ownership_of_block_and_course, validate_ownership_of_block_course_component};
+use crate::errors::AppError;
+use crate::middleware::auth::{
+    check_authorization, validate_ownership_of_block, validate_ownership_of_block_and_course,
+    validate_ownership_of_block_course_component,
+};
 use axum::http::header::AUTHORIZATION;
 use axum::http::{Method, StatusCode};
 use axum::{
@@ -26,7 +30,6 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::Targets;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use crate::errors::AppError;
 
 pub struct ServerState {
     db_pool: Pool<ConnectionManager<PgConnection>>,
@@ -35,8 +38,9 @@ pub struct ServerState {
 
 impl ServerState {
     fn get_db_con(&self) -> Result<PooledConnection<ConnectionManager<PgConnection>>, AppError> {
-        self.db_pool.get().map_err(|e|AppError{
-            status_code: StatusCode::INTERNAL_SERVER_ERROR, description: "Unable to connect to the Gradekeeper database.".to_string()
+        self.db_pool.get().map_err(|_e| AppError {
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            description: "Unable to connect to the Gradekeeper database.".to_string(),
         })
     }
 }

@@ -7,7 +7,7 @@ use crate::models::StudyBlock;
 use crate::routes::api::auth::callback::Session;
 use crate::schema::study_block::dsl::study_block;
 use crate::ServerState;
-use diesel::{insert_into, QueryDsl, RunQueryDsl, SelectableHelper};
+use diesel::{insert_into, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 
