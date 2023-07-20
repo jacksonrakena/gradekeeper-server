@@ -15,7 +15,10 @@ pub struct AppError {
 }
 impl From<Error> for AppError {
     fn from(value: Error) -> Self {
-        AppError::database_ise(value)
+        match value {
+            Error::NotFound => AppError::resource_not_found(),
+            _ => AppError::database_ise(value),
+        }
     }
 }
 impl AppError {
