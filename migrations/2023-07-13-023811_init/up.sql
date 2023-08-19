@@ -1,6 +1,6 @@
 CREATE TABLE gk_user
 (
-    id         varchar(191) NOT NULL,
+    id         varchar(25) NOT NULL,
     grade_map  json         NOT NULL,
     created_at timestamptz  NOT NULL DEFAULT now(),
     PRIMARY KEY (id)
@@ -8,8 +8,8 @@ CREATE TABLE gk_user
 
 CREATE TABLE study_block
 (
-    id         varchar(191) NOT NULL,
-    user_id    varchar(191) NOT NULL,
+    id         varchar(25) NOT NULL,
+    user_id    varchar(25) NOT NULL,
     start_date timestamptz  NOT NULL,
     end_date   timestamptz  NOT NULL,
     name       varchar(191) NOT NULL DEFAULT '',
@@ -19,11 +19,11 @@ CREATE TABLE study_block
 
 CREATE TABLE course
 (
-    id                 varchar(191) NOT NULL,
-    block_id           varchar(191) NOT NULL,
+    id                 varchar(25) NOT NULL,
+    block_id           varchar(25) NOT NULL,
     long_name          varchar(191) NOT NULL,
-    course_code_name   varchar(191) NOT NULL,
-    course_code_number varchar(191) NOT NULL,
+    course_code_name   varchar(10) NOT NULL,
+    course_code_number varchar(10) NOT NULL,
     color              varchar(7)   NOT NULL DEFAULT '',
     PRIMARY KEY (id),
     CONSTRAINT fk_block_owns_course FOREIGN KEY (block_id) REFERENCES study_block (id) ON DELETE CASCADE
@@ -31,8 +31,8 @@ CREATE TABLE course
 
 CREATE TABLE course_component
 (
-    id                                     varchar(191) NOT NULL,
-    course_id                              varchar(191) NOT NULL,
+    id                                     varchar(25) NOT NULL,
+    course_id                              varchar(25) NOT NULL,
     name                                   varchar(191) NOT NULL,
     name_of_subcomponent_singular          varchar(191) NOT NULL,
     subject_weighting                      numeric(5,4)       NOT NULL,
@@ -43,8 +43,8 @@ CREATE TABLE course_component
 
 CREATE TABLE course_subcomponent
 (
-    id                     varchar(191) NOT NULL,
-    component_id           varchar(191) NOT NULL,
+    id                     varchar(25) NOT NULL,
+    component_id           varchar(25) NOT NULL,
     number_in_sequence     int          NOT NULL,
     override_name          varchar(191),
     is_completed           bool   NOT NULL,
