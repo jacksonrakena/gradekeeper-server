@@ -73,6 +73,7 @@ async fn main() {
         env::consts::OS,
         env::consts::ARCH
     );
+    info!("Allowed redirect URLs: {}", config.permitted_redirect_urls.clone().map(|r|r.iter().map(|d|d.to_string()).collect::<Vec<String>>().join(", ")).unwrap_or("".to_string()));
 
     let initial_state = ServerState {
         db_pool: Pool::builder()

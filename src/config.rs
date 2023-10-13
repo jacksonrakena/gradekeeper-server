@@ -1,5 +1,7 @@
 use dotenvy::dotenv;
 use std::env;
+use std::str::FromStr;
+use hyper::Uri;
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -8,7 +10,7 @@ pub struct Config {
     pub jwt_maxage: i64,
     pub google_client_id: String,
     pub google_client_secret: String,
-    pub permitted_redirect_urls: Option<Vec<String>>,
+    pub permitted_redirect_urls: Option<Vec<Uri>>,
 }
 
 impl Config {
@@ -22,7 +24,14 @@ impl Config {
                 .expect("Cannot parse JWT_MAXAGE into i32"),
             google_client_id: Config::expect_var("GOOGLE_CLIENT_ID"),
             google_client_secret: Config::expect_var("GOOGLE_CLIENT_SECRET"),
-            permitted_redirect_urls: Config::optional_array("PERMITTED_REDIRECT_URLS"),
+            permitted_redirect_urls:
+                Config::optional_array("PERMITTED_REDIRECT_URLS").map(|e| {
+                    return e.iter().map(|d|
+                        Uri::from_str(d).expect(format!(
+                            "PERMITTED_REDIRECT_URLS: Could not parse '{}' as valid URL",
+                            d
+                        ).as_str())).collect::<Vec<Uri>>()
+                }),
         }
     }
 

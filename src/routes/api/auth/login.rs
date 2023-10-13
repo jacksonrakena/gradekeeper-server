@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use crate::errors::AppError;
 use crate::ServerState;
 use axum::extract::{Host, Query};
@@ -6,6 +7,7 @@ use axum::Extension;
 use std::sync::Arc;
 use base64::Engine;
 use base64::engine::general_purpose;
+use hyper::Uri;
 use serde::{Deserialize, Serialize};
 
 use crate::routes::api::auth::determine_callback_url;
@@ -23,7 +25,10 @@ pub async fn handle_login_request(
 ) -> Result<Redirect, AppError> {
     let redirect_url = match &state.config.permitted_redirect_urls {
         Some(permitted) => {
-            if !permitted.contains(&redirect_url.redirect_url) {
+            let Ok(uri) = Uri::from_str(&redirect_url.redirect_url) else {
+                return AppError::invalid_redirect_url(redirect_url.redirect_url).into()
+            };
+            if !permitted.contains(&uri) {
                 return AppError::invalid_redirect_url(redirect_url.redirect_url).into()
             }
             redirect_url
