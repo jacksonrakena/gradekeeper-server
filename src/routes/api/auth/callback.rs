@@ -7,20 +7,24 @@ use hyper::header::{AUTHORIZATION, CONTENT_TYPE};
 use hyper::{header, Body};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use std::sync::Arc;
+use base64::Engine;
+use base64::engine::general_purpose;
 
 use serde::{Deserialize, Serialize};
 
 use crate::errors::AppError;
 use crate::middleware::auth::COOKIE_NAME;
-use crate::routes::api::auth::{determine_callback_url, determine_redirect_url};
+use crate::routes::api::auth::{determine_callback_url};
 use crate::ServerState;
 use time::Duration;
+use crate::routes::api::auth::login::LoginRequestInfo;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct CallbackData {
     error: Option<String>,
     code: Option<String>,
+    state: String
 }
 #[derive(Serialize)]
 pub struct TokenRequest {
@@ -61,6 +65,13 @@ pub async fn handle_auth_callback(
         status_code: StatusCode::UNAUTHORIZED,
         description: "Failed to authorize with Google.".to_string(),
     }) };
+
+    let Ok(decoded_info_bytes) =
+        general_purpose::STANDARD_NO_PAD
+            .decode(&*data.state)else { return AppError::bad_request("Unable to decode state.").into() };
+
+    let Ok(lri) = serde_json::from_slice::<LoginRequestInfo>(&*decoded_info_bytes)
+        else { return AppError::bad_request("Unable to decode state.").into() };
 
     let client = reqwest::Client::new();
     let request = client
@@ -120,17 +131,7 @@ pub async fn handle_auth_callback(
     )
     .unwrap();
 
-    let cookie = Cookie::build(COOKIE_NAME, token.to_owned())
-        .path("/")
-        .max_age(Duration::minutes(state.config.jwt_maxage))
-        .same_site(SameSite::None)
-        .http_only(false)
-        .finish();
-
-    let mut response = Redirect::to(format!("{}/?cookie={}", determine_redirect_url(&state), cookie.to_string()).as_str()).into_response();
-    response
-        .headers_mut()
-        .insert(header::SET_COOKIE, cookie.to_string().parse().unwrap());
+    let mut response = Redirect::to(format!("{}/?token={}", lri.redirect_url, token.to_owned()).as_str()).into_response();
 
     Ok(response)
 }
