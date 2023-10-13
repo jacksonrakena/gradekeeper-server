@@ -1,6 +1,6 @@
 CREATE TABLE gk_user
 (
-    id         varchar(25) NOT NULL,
+    id         varchar(191) NOT NULL,
     grade_map  json         NOT NULL,
     created_at timestamptz  NOT NULL DEFAULT now(),
     PRIMARY KEY (id)
@@ -9,7 +9,7 @@ CREATE TABLE gk_user
 CREATE TABLE study_block
 (
     id         varchar(25) NOT NULL,
-    user_id    varchar(25) NOT NULL,
+    user_id    varchar(191) NOT NULL,
     start_date timestamptz  NOT NULL,
     end_date   timestamptz  NOT NULL,
     name       varchar(191) NOT NULL DEFAULT '',

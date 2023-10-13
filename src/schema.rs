@@ -2,7 +2,7 @@
 
 diesel::table! {
     course (id) {
-        #[max_length = 25]
+        #[max_length = 191]
         id -> Varchar,
         #[max_length = 25]
         block_id -> Varchar,
@@ -59,7 +59,7 @@ diesel::table! {
     study_block (id) {
         #[max_length = 25]
         id -> Varchar,
-        #[max_length = 25]
+        #[max_length = 191]
         user_id -> Varchar,
         start_date -> Timestamptz,
         end_date -> Timestamptz,
