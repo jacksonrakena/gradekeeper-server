@@ -16,21 +16,10 @@ pub fn determine_redirect_url(state: &Arc<ServerState>) -> String {
 }
 
 pub fn determine_callback_url(host: String, state: &Arc<ServerState>) -> String {
-    let mut p = state
-        .config
-        .client_redirect_url
-        .clone()
-        .map(|u| Uri::from_str(u.as_str()).unwrap().into_parts())
-        .unwrap_or_else(|| {
-            Uri::builder()
-                .scheme(Scheme::HTTPS)
-                .authority(host)
-                .path_and_query("/")
-                .build()
-                .unwrap()
-                .into_parts()
-        });
-    p.path_and_query = Some(PathAndQuery::from_str("/api/auth/callback").unwrap());
-
-    Uri::from_parts(p).unwrap().to_string()
+    Uri::builder()
+        .scheme(Scheme::HTTPS)
+        .authority(host)
+        .path_and_query("/api/auth/callback")
+        .build()
+        .unwrap().to_string()
 }

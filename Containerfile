@@ -16,5 +16,5 @@ RUN cargo build --release --bin gk-server
 
 FROM debian:bookworm-slim AS runtime
 COPY --from=builder /app/target/release/gk-server /usr/local/bin/
-RUN apt-get update && apt install -y openssl libpq-dev
+RUN apt-get update && apt install -y openssl libpq-dev ca-certificates
 CMD ["/usr/local/bin/gk-server"]

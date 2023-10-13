@@ -9,6 +9,7 @@ use serde_json::json;
 
 pub type AppResult<R> = Result<R, AppError>;
 
+#[derive(Debug)]
 pub struct AppError {
     pub(crate) status_code: StatusCode,
     pub(crate) description: String,

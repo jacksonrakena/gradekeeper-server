@@ -23,6 +23,8 @@ use routes::api;
 use std::env;
 use std::iter::once;
 use std::sync::Arc;
+use diesel::pg::Pg;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use tower_http::add_extension::AddExtensionLayer;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
@@ -30,6 +32,8 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::Targets;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 pub struct ServerState {
     db_pool: Pool<ConnectionManager<PgConnection>>,
@@ -43,6 +47,10 @@ impl ServerState {
             description: "Unable to connect to the Gradekeeper database.".to_string(),
         })
     }
+}
+
+pub fn run_db_migrations(conn: &mut PooledConnection<ConnectionManager<PgConnection>>) {
+    conn.run_pending_migrations(MIGRATIONS).expect("Could not run migrations");
 }
 
 #[tokio::main]
@@ -73,6 +81,8 @@ async fn main() {
             .expect("Could not build connection pool"),
         config,
     };
+
+    run_db_migrations(&mut initial_state.get_db_con().expect("Could not connect to database."));
 
     let app = Router::new()
         // Users
@@ -108,7 +118,7 @@ async fn main() {
         .route("/api/auth/callback", get(routes::api::auth::callback::handle_auth_callback))
         // Final Layer - CORS
         .layer(SetSensitiveRequestHeadersLayer::new(once(AUTHORIZATION)))
-        .layer(CorsLayer::new().allow_origin(Any).allow_methods([Method::GET,Method::POST]))
+        .layer(CorsLayer::new().allow_origin(Any).allow_headers([AUTHORIZATION]).allow_methods([Method::GET,Method::POST]))
         .layer(TraceLayer::new_for_http())
         .layer(AddExtensionLayer::new(Arc::new(initial_state)));
 
@@ -119,3 +129,4 @@ async fn main() {
         error!("server crashed: {}", err);
     }
 }
+

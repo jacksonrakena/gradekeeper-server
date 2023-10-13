@@ -127,7 +127,7 @@ pub async fn handle_auth_callback(
         .http_only(false)
         .finish();
 
-    let mut response = Redirect::to(determine_redirect_url(&state).as_str()).into_response();
+    let mut response = Redirect::to(format!("{}/?cookie={}", determine_redirect_url(&state), cookie.to_string()).as_str()).into_response();
     response
         .headers_mut()
         .insert(header::SET_COOKIE, cookie.to_string().parse().unwrap());
