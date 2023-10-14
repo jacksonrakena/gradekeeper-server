@@ -26,7 +26,7 @@ impl AppError {
     pub fn invalid_redirect_url(redirect_url: String) -> AppError {
         AppError {
             status_code: StatusCode::BAD_REQUEST,
-            description: format!("Redirect URL '{}' is not allowed.", redirect_url)
+            description: format!("Redirect URL '{}' is not allowed.", redirect_url),
         }
     }
     pub fn resource_access_denied() -> AppError {

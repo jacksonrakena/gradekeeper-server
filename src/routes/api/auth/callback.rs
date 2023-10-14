@@ -2,29 +2,26 @@ use axum::extract::{Host, Query};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::Extension;
-use axum_extra::extract::cookie::{Cookie, SameSite};
+use base64::engine::general_purpose;
+use base64::Engine;
 use hyper::header::{AUTHORIZATION, CONTENT_TYPE};
-use hyper::{header, Body};
+use hyper::Body;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use std::sync::Arc;
-use base64::Engine;
-use base64::engine::general_purpose;
 
 use serde::{Deserialize, Serialize};
 
 use crate::errors::AppError;
-use crate::middleware::auth::COOKIE_NAME;
-use crate::routes::api::auth::{determine_callback_url};
-use crate::ServerState;
-use time::Duration;
+use crate::routes::api::auth::determine_callback_url;
 use crate::routes::api::auth::login::LoginRequestInfo;
+use crate::ServerState;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct CallbackData {
     error: Option<String>,
     code: Option<String>,
-    state: String
+    state: String,
 }
 #[derive(Serialize)]
 pub struct TokenRequest {
@@ -61,17 +58,20 @@ pub async fn handle_auth_callback(
     Extension(state): Extension<Arc<ServerState>>,
     Host(host): Host,
 ) -> Result<Response, AppError> {
-    let Some(code) = data.code else { return Err(AppError {
-        status_code: StatusCode::UNAUTHORIZED,
-        description: "Failed to authorize with Google.".to_string(),
-    }) };
+    let Some(code) = data.code else {
+        return Err(AppError {
+            status_code: StatusCode::UNAUTHORIZED,
+            description: "Failed to authorize with Google.".to_string(),
+        });
+    };
 
-    let Ok(decoded_info_bytes) =
-        general_purpose::STANDARD_NO_PAD
-            .decode(&*data.state)else { return AppError::bad_request("Unable to decode state.").into() };
+    let Ok(decoded_info_bytes) = general_purpose::STANDARD_NO_PAD.decode(&*data.state) else {
+        return AppError::bad_request("Unable to decode state.").into();
+    };
 
-    let Ok(lri) = serde_json::from_slice::<LoginRequestInfo>(&*decoded_info_bytes)
-        else { return AppError::bad_request("Unable to decode state.").into() };
+    let Ok(lri) = serde_json::from_slice::<LoginRequestInfo>(&*decoded_info_bytes) else {
+        return AppError::bad_request("Unable to decode state.").into();
+    };
 
     let client = reqwest::Client::new();
     let request = client
@@ -83,7 +83,7 @@ pub async fn handle_auth_callback(
                 client_secret: state.config.google_client_secret.clone(),
                 code,
                 grant_type: "authorization_code".to_string(),
-                redirect_uri: determine_callback_url(host, &state),
+                redirect_uri: determine_callback_url(host),
             })
             .unwrap(),
         ))
@@ -131,7 +131,9 @@ pub async fn handle_auth_callback(
     )
     .unwrap();
 
-    let mut response = Redirect::to(format!("{}/?token={}", lri.redirect_url, token.to_owned()).as_str()).into_response();
+    let response =
+        Redirect::to(format!("{}/?token={}", lri.redirect_url, token.to_owned()).as_str())
+            .into_response();
 
     Ok(response)
 }
