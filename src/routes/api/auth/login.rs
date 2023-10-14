@@ -40,7 +40,7 @@ pub async fn handle_login_request(
         &state.config.google_client_id,
         determine_callback_url(host),
         "code",
-        general_purpose::STANDARD_NO_PAD.encode(serde_json::to_string(&uri.to_string()).unwrap())
+        general_purpose::STANDARD_NO_PAD.encode(serde_json::to_string(&LoginRequestInfo { redirect_url: uri.to_string() }).unwrap())
     );
 
     Ok(Redirect::to(&*redirection_url))

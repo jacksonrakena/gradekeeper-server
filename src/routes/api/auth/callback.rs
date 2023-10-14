@@ -66,11 +66,11 @@ pub async fn handle_auth_callback(
     };
 
     let Ok(decoded_info_bytes) = general_purpose::STANDARD_NO_PAD.decode(&*data.state) else {
-        return AppError::bad_request("Unable to decode state.").into();
+        return AppError::bad_request("Unable to decode base64 data from state.").into();
     };
 
     let Ok(lri) = serde_json::from_slice::<LoginRequestInfo>(&*decoded_info_bytes) else {
-        return AppError::bad_request("Unable to decode state.").into();
+        return AppError::bad_request("Unable to decode login information from state.").into();
     };
 
     let client = reqwest::Client::new();
