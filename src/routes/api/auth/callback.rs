@@ -65,7 +65,7 @@ pub async fn handle_auth_callback(
         });
     };
 
-    let decoded_info_bytes = general_purpose::STANDARD_NO_PAD
+    let decoded_info_bytes = general_purpose::URL_SAFE_NO_PAD
         .decode(&*data.state)
         .or_else(|_| AppError::bad_request("Unable to decode base64 data from state.").into())?;
 
