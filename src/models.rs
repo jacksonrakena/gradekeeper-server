@@ -38,9 +38,9 @@ pub struct StudyBlock {
 #[diesel(belongs_to(StudyBlock, foreign_key=block_id))]
 pub struct Course {
     pub id: String,
-    pub long_name: String,
-    pub course_code_name: String,
-    pub course_code_number: String,
+    pub long_name: Option<String>,
+    pub course_code_name: Option<String>,
+    pub course_code_number: Option<String>,
     #[serde(rename = "studyBlockId")]
     pub block_id: String,
     pub color: String,

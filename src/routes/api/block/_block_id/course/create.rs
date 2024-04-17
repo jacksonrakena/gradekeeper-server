@@ -96,9 +96,9 @@ pub async fn create_course(
         let course_id = cuid();
         let new_course = Course {
             id: course_id.clone(),
-            long_name: course_data.name,
-            course_code_name: course_data.course_code_name,
-            course_code_number: course_data.course_code_number,
+            long_name: Some(course_data.name),
+            course_code_name: Some(course_data.course_code_name),
+            course_code_number: Some(course_data.course_code_number),
             block_id: _block_id,
             color: course_data.color,
         };
