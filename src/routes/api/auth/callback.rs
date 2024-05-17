@@ -39,8 +39,6 @@ pub struct TokenResponse {
 #[derive(Deserialize, Debug)]
 pub struct UserInfo {
     pub name: String,
-    pub given_name: String,
-    pub family_name: String,
     pub picture: String,
     pub email: String,
     pub email_verified: bool,
