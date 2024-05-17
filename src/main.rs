@@ -68,7 +68,8 @@ async fn main() {
         .with(filter)
         .init();
     info!(
-        "Gradekeeper Nova server starting on {} {} {}",
+        "Gradekeeper server v{} starting on {}/{}/{}",
+        env!("CARGO_PKG_VERSION"),
         env::consts::FAMILY,
         env::consts::OS,
         env::consts::ARCH
