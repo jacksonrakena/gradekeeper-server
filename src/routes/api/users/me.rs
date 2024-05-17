@@ -11,15 +11,18 @@ use time::OffsetDateTime;
 use crate::errors::AppError;
 use crate::models::{Course, CourseComponent, CourseSubcomponent, StudyBlock, User};
 use crate::routes::api::auth::callback::Session;
+use crate::routes::api::users::{gather_meta_info, ServerMetaInfo};
 use crate::schema::gk_user::dsl::gk_user;
 use crate::schema::gk_user::{grade_map, id};
 use crate::ServerState;
+
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetUser {
     grade_map: serde_json::Value,
     study_blocks: Vec<GetUserStudyBlock>,
+    meta: ServerMetaInfo
 }
 
 #[derive(Serialize)]
@@ -103,6 +106,7 @@ pub async fn get_user<B>(
                             .collect(),
                     })
                     .collect(),
+                meta: gather_meta_info(),
             }))
         }
         Err(diesel::NotFound) => {
@@ -126,6 +130,7 @@ pub async fn get_user<B>(
             return Ok(Json(GetUser {
                 grade_map: user.grade_map,
                 study_blocks: vec![],
+                meta: gather_meta_info()
             }));
         }
         Err(e) => return AppError::database_ise(e).into(),
