@@ -25,7 +25,7 @@ use std::env;
 use std::iter::once;
 use std::sync::Arc;
 use tower_http::add_extension::AddExtensionLayer;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::Targets;
@@ -133,7 +133,7 @@ async fn main() {
         .route("/api/auth/callback", get(routes::api::auth::callback::handle_auth_callback))
         // Final Layer - CORS
         .layer(SetSensitiveRequestHeadersLayer::new(once(AUTHORIZATION)))
-        .layer(CorsLayer::permissive())
+        .layer(CorsLayer::new().allow_origin(Any).allow_headers([AUTHORIZATION]))
         .layer(TraceLayer::new_for_http())
         .layer(AddExtensionLayer::new(Arc::new(initial_state)));
 
