@@ -1,0 +1,20 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the image
+      run: podman build -t ghcr.io/jacksonrakena/gradekeeper-server:latest
+    - name: Publish image
+      run: podman push ghcr.io/jacksonrakena/gradekeeper-server:latest
