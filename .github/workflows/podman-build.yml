@@ -10,7 +10,7 @@ jobs:
 
   build:
 
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -29,6 +29,7 @@ jobs:
       with:
         image: jacksonrakena/gradekeeper-server
         tags: latest ${{ github.sha }}
+        archs: arm64,amd64
         containerfiles: |
           ./Containerfile
     - name: Push image
