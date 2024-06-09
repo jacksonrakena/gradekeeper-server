@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Build and Publish Podman Image
 
 on:
   push:
@@ -15,6 +15,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the image
-      run: podman build -t ghcr.io/jacksonrakena/gradekeeper-server:latest
+      run: podman build -t ghcr.io/jacksonrakena/gradekeeper-server:latest .
     - name: Publish image
       run: podman push ghcr.io/jacksonrakena/gradekeeper-server:latest
