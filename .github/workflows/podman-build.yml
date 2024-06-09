@@ -35,6 +35,7 @@ jobs:
       with:
         image: ${{ steps.build-image.outputs.image }}
         tags: ${{ steps.build-image.outputs.tags }}
+        registry: ghcr.io
   
     - name: Print image URL  
       run: echo "Image pushed to ${{ steps.push-image.outputs.registry-paths }}"
