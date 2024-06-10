@@ -55,7 +55,6 @@ pub fn run_db_migrations(conn: &mut PooledConnection<ConnectionManager<PgConnect
 
 #[tokio::main]
 async fn main() {
-    let config = Config::init_from_env();
     let filter = Targets::new()
         .with_target(
             "tower_http::trace::on_response",
@@ -67,6 +66,9 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .with(filter)
         .init();
+    
+    let config = Config::init_from_env();
+    
     info!(
         "Gradekeeper server v{} starting on {}/{}/{}",
         env!("CARGO_PKG_VERSION"),

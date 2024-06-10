@@ -2,6 +2,7 @@ use dotenvy::dotenv;
 use hyper::Uri;
 use std::env;
 use std::str::FromStr;
+use log::info;
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -15,7 +16,9 @@ pub struct Config {
 
 impl Config {
     pub fn init_from_env() -> Config {
-        dotenv().unwrap();
+        if let Err(_) = dotenv() {
+            info!("No .env file found: loading configuration from environment");
+        }
         Config {
             database_url: Config::expect_var("DATABASE_URL"),
             jwt_secret: Config::expect_var("JWT_SECRET"),
