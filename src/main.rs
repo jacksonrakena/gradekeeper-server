@@ -25,7 +25,7 @@ use std::env;
 use std::iter::once;
 use std::sync::Arc;
 use tower_http::add_extension::AddExtensionLayer;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{CorsLayer};
 use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::Targets;
