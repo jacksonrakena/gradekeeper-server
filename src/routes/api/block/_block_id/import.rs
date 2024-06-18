@@ -70,6 +70,7 @@ pub(crate) async fn import_course(
             number_of_subcomponents_to_drop_lowest: c.number_of_subcomponents_to_drop_lowest,
             course_id: new_course_id.clone(),
             subject_weighting: c.subject_weighting,
+            sequence_number: c.sequence_number
         };
         components.push(component);
         for subcomponent in split_subcomponent {

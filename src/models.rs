@@ -60,6 +60,7 @@ pub struct CourseComponent {
     pub number_of_subcomponents_to_drop_lowest: i32,
     pub course_id: String,
     pub subject_weighting: bigdecimal::BigDecimal,
+    pub sequence_number: Option<i16>,
 }
 
 #[derive(

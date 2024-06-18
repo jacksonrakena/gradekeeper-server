@@ -29,6 +29,7 @@ diesel::table! {
         name_of_subcomponent_singular -> Varchar,
         subject_weighting -> Numeric,
         number_of_subcomponents_to_drop_lowest -> Int4,
+        sequence_number -> Nullable<Int2>,
     }
 }
 

@@ -105,7 +105,7 @@ pub async fn create_course(
 
         let mut new_components: Vec<CourseComponent> = vec![];
         let mut new_subcomponents: Vec<CourseSubcomponent> = vec![];
-        for component in course_data.components {
+        for (i,component) in course_data.components.into_iter().enumerate() {
             let new_component_id = cuid();
             let new_component = CourseComponent {
                 id: new_component_id.clone(),
@@ -114,6 +114,7 @@ pub async fn create_course(
                 subject_weighting: component.weighting,
                 number_of_subcomponents_to_drop_lowest: component.drop_lowest,
                 name_of_subcomponent_singular: "".to_string(),
+                sequence_number: Some((i + 1) as i16)
             };
             let n_subc = component.number_of_subcomponents.parse::<i32>().unwrap();
             for i in 1..(n_subc + 1) {
