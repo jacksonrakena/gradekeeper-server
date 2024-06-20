@@ -29,8 +29,7 @@ pub struct UpdateCourseComponentChangeset {
     pub name_of_subcomponent_singular: Option<String>,
     pub subject_weighting: Option<BigDecimal>,
     #[serde(rename = "numberOfSubComponentsToDrop_Lowest")]
-    pub number_of_subcomponents_to_drop_lowest: Option<i32>,
-    pub sequence_number: Option<i16>
+    pub number_of_subcomponents_to_drop_lowest: Option<i32>
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
