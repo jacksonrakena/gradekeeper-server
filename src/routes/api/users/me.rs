@@ -127,13 +127,13 @@ pub async fn get_user<B>(
                 created_at: OffsetDateTime::now_utc(),
             };
             insert_into(gk_user).values(&user).execute(con)?;
-            return Ok(Json(GetUser {
+            Ok(Json(GetUser {
                 grade_map: user.grade_map,
                 study_blocks: vec![],
                 meta: gather_meta_info()
-            }));
+            }))
         }
-        Err(e) => return AppError::database_ise(e).into(),
+        Err(e) => Err(AppError::database_ise(e))
     }
 }
 
