@@ -49,14 +49,15 @@ pub async fn update_course_component_order(
                 .filter(course_id.eq(&course_id))
                 .set(sequence_number.eq(new_sequence_number))
                 .execute(txn) {
-                Ok(_) => {},
-                Err(e) => return Err(e)
+                Err(e) => return Err(AppError::database_ise(e)),
+                Ok(n) if n != 1 => return Err(AppError::bad_request("You don't own that component.")),
+                Ok(_) => {}
             }
         }
         Ok(0)
     });
     if update_sequence_transaction.is_err() {
-        return Err(AppError::database_ise(update_sequence_transaction.unwrap_err()))
+        return Err(update_sequence_transaction.unwrap_err())
     }
 
     get_course(Path((_block_id, _course_id)), Extension(state)).await
