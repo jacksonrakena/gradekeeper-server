@@ -10,73 +10,89 @@ use std::sync::Arc;
 use diesel::{BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 
 use jsonwebtoken::{decode, DecodingKey, Validation};
+use serde::Deserialize;
 
 use crate::errors::AppError;
-use crate::models::StudyBlock;
+use crate::models::{Course, CourseComponent, CourseSubcomponent, StudyBlock};
 use crate::routes::api::auth::callback::Session;
+use crate::schema::course::block_id;
+use crate::schema::course::dsl::course;
+use crate::schema::course_component::course_id;
+use crate::schema::course_component::dsl::course_component;
+use crate::schema::course_subcomponent::component_id;
+use crate::schema::course_subcomponent::dsl::course_subcomponent;
 
 use crate::schema::study_block::dsl::study_block;
 use crate::schema::study_block::{id, user_id};
 use crate::ServerState;
 
-async fn _validate_ownership_of_block(
-    _block_id: &String,
-    session: Arc<Session>,
-    state: Arc<ServerState>,
-) -> Result<Option<StudyBlock>, AppError> {
+#[derive(Deserialize)]
+pub struct RouteAssetIdentifiers {
+    block_id: Option<String>,
+    course_id: Option<String>,
+    component_id: Option<String>,
+    subcomponent_id: Option<String>,
+}
+pub async fn validate_ownership_of_route_assets<B>(
+    Path(route_asset_ids): Path<RouteAssetIdentifiers>,
+    Extension(session): Extension<Arc<Session>>,
+    Extension(state): Extension<Arc<ServerState>>,
+    request: Request<B>,
+    next: Next<B>
+) -> Result<Response, AppError> {
     let con = &mut state.get_db_con()?;
-    Ok(study_block
-        .filter(id.eq(_block_id.clone()).and(user_id.eq(session.id.clone())))
-        .select(StudyBlock::as_select())
-        .first(con)
-        .ok())
-}
-pub async fn validate_ownership_of_block_and_course<B>(
-    Path((_block_id, _course_id)): Path<(String, String)>,
-    Extension(session): Extension<Arc<Session>>,
-    Extension(state): Extension<Arc<ServerState>>,
-    request: Request<B>,
-    next: Next<B>,
-) -> Result<Response, AppError> {
-    if _validate_ownership_of_block(&_block_id, session, state)
-        .await?
-        .is_some()
-    {
-        return Ok(next.run(request).await);
+    match &route_asset_ids.block_id {
+        Some(_block_id) => {
+            if !study_block
+                .filter(id.eq(_block_id).and(user_id.eq(&session.id)))
+                .select(StudyBlock::as_select())
+                .first(con)
+                .is_ok() {
+                return Err(AppError::resource_access_denied())
+            }
+        },
+        _ => {}
     }
-    AppError::resource_access_denied().into()
-}
-
-pub async fn validate_ownership_of_block_course_component<B>(
-    Path((_block_id, _course_id, _component_id)): Path<(String, String, String)>,
-    Extension(session): Extension<Arc<Session>>,
-    Extension(state): Extension<Arc<ServerState>>,
-    request: Request<B>,
-    next: Next<B>,
-) -> Result<Response, AppError> {
-    validate_ownership_of_block(
-        Path(_block_id),
-        Extension(session),
-        Extension(state),
-        request,
-        next,
-    )
-    .await
-}
-pub async fn validate_ownership_of_block<B>(
-    Path(_block_id): Path<String>,
-    Extension(session): Extension<Arc<Session>>,
-    Extension(state): Extension<Arc<ServerState>>,
-    request: Request<B>,
-    next: Next<B>,
-) -> Result<Response, AppError> {
-    if _validate_ownership_of_block(&_block_id, session, state)
-        .await?
-        .is_some()
-    {
-        return Ok(next.run(request).await);
+    
+    match &route_asset_ids.course_id {
+        Some(_course_id) => {
+            if !course
+                .filter(crate::schema::course::id.eq(_course_id).and(block_id.eq(route_asset_ids.block_id.unwrap())))
+                .select(Course::as_select())
+                .first(con)
+                .is_ok() {
+                return Err(AppError::resource_access_denied())
+            }
+        },
+        _ => {}
     }
-    AppError::resource_access_denied().into()
+    
+    match &route_asset_ids.component_id {
+        Some(_component_id) => {
+            if !course_component
+                .filter(crate::schema::course_component::id.eq(_component_id).and(course_id.eq(route_asset_ids.course_id.unwrap())))
+                .select(CourseComponent::as_select())
+                .first(con)
+                .is_ok() {
+                return Err(AppError::resource_access_denied())
+            }
+        },
+        _ => {}
+    }
+    
+    match &route_asset_ids.subcomponent_id {
+        Some(_subcomponent_id) => {
+            if !course_subcomponent
+                .filter(crate::schema::course_subcomponent::id.eq(_subcomponent_id).and(component_id.eq(route_asset_ids.component_id.unwrap())))
+                .select(CourseSubcomponent::as_select())
+                .first(con)
+                .is_ok() {
+                return Err(AppError::resource_access_denied())
+            }
+        },
+        _ => {}
+    }
+    Ok(next.run(request).await)
 }
 
 pub async fn check_authorization<B>(

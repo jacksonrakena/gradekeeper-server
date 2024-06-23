@@ -6,10 +6,7 @@ mod routes;
 mod schema;
 use crate::config::Config;
 use crate::errors::AppError;
-use crate::middleware::auth::{
-    check_authorization, validate_ownership_of_block, validate_ownership_of_block_and_course,
-    validate_ownership_of_block_course_component,
-};
+use crate::middleware::auth::{check_authorization, validate_ownership_of_route_assets};
 use axum::http::header::AUTHORIZATION;
 use axum::http::StatusCode;
 use axum::{
@@ -110,32 +107,26 @@ async fn main() {
         // Blocks
         .route("/api/block/create", post(api::block::create::create_block))
         .route("/api/block/:block_id", axum::routing::delete(api::block::block_id::delete_block))
-        .route("/api/block/:block_id/import", post(api::block::_block_id::import::import_course)
-            .layer(axum::middleware::from_fn(validate_ownership_of_block)))
+        .route("/api/block/:block_id/import", post(api::block::_block_id::import::import_course))
 
         // Courses
-        .route("/api/block/:block_id/course/create", post(api::block::_block_id::course::create::create_course)
-            .layer(axum::middleware::from_fn(validate_ownership_of_block)))
-        .route("/api/block/:block_id/course/:course_id", get(api::block::_block_id::course::course_id::get_course)
-            .layer(axum::middleware::from_fn(validate_ownership_of_block_and_course)))
-        .route("/api/block/:block_id/course/:course_id", axum::routing::delete(api::block::_block_id::course::course_id::delete_course)
-            .layer(axum::middleware::from_fn(validate_ownership_of_block_and_course)))
-        .route("/api/block/:block_id/course/:course_id", post(api::block::_block_id::course::course_id::update_course)
-            .layer(axum::middleware::from_fn(validate_ownership_of_block_and_course)))
-        .route("/api/block/:block_id/course/:course_id/order", post(api::block::_block_id::course::_course_id::order::update_course_component_order)
-            .layer(axum::middleware::from_fn(validate_ownership_of_block_and_course)))
+        .route("/api/block/:block_id/course/create", post(api::block::_block_id::course::create::create_course))
+        .route("/api/block/:block_id/course/:course_id", get(api::block::_block_id::course::course_id::get_course))
+        .route("/api/block/:block_id/course/:course_id", axum::routing::delete(api::block::_block_id::course::course_id::delete_course))
+        .route("/api/block/:block_id/course/:course_id", post(api::block::_block_id::course::course_id::update_course))
+        .route("/api/block/:block_id/course/:course_id/order", post(api::block::_block_id::course::_course_id::order::update_course_component_order))
         
         // Components
         .route("/api/block/:block_id/course/:course_id/component/:component_id",
                post(api::block::_block_id::course::_course_id::component::component_id::update_course_component)
-                   .layer(axum::middleware::from_fn(validate_ownership_of_block_course_component))
         )
+        .layer(axum::middleware::from_fn(validate_ownership_of_route_assets))
         .layer(axum::middleware::from_fn(check_authorization))
         // End authorised section
 
         // Login
-        .route("/api/auth/login", get(routes::api::auth::login::handle_login_request))
-        .route("/api/auth/callback", get(routes::api::auth::callback::handle_auth_callback))
+        .route("/api/auth/login", get(api::auth::login::handle_login_request))
+        .route("/api/auth/callback", get(api::auth::callback::handle_auth_callback))
         // Final Layer - CORS
         .layer(SetSensitiveRequestHeadersLayer::new(once(AUTHORIZATION)))
         .layer(CorsLayer::permissive().allow_headers([AUTHORIZATION, CONTENT_TYPE]))
