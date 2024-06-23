@@ -3,11 +3,8 @@ use std::sync::Arc;
 
 use axum::{Extension, Json};
 use bigdecimal::BigDecimal;
-use cuid2::cuid;
-use diesel::{
-    delete, insert_into, update, AsChangeset, BelongingToDsl, Connection, ExpressionMethods,
-    QueryDsl, RunQueryDsl, SelectableHelper,
-};
+
+use diesel::{update, AsChangeset, BelongingToDsl, Connection, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 
 use crate::errors::AppError;
 use crate::models::{CourseComponent, CourseSubcomponent};
@@ -17,9 +14,9 @@ use serde::Deserialize;
 use crate::routes::api::users::me::GetUserComponent;
 use crate::schema::course_component::dsl::course_component;
 use crate::schema::course_component::id;
-use crate::schema::course_subcomponent::component_id;
+
 use crate::schema::course_subcomponent::dsl::course_subcomponent;
-use crate::ServerState;
+use crate::{schema, ServerState};
 
 #[derive(Deserialize, AsChangeset)]
 #[serde(rename_all = "camelCase")]
@@ -36,12 +33,15 @@ pub struct UpdateCourseComponentChangeset {
 pub struct UpdateCourseComponent {
     #[serde(flatten)]
     pub changeset: UpdateCourseComponentChangeset,
-    pub subcomponents: Option<Vec<UpdateCourseSubcomponent>>,
+    pub subcomponents: Option<Vec<UpdateCourseSubcomponentChangeset>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize,AsChangeset)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateCourseSubcomponent {
+#[diesel(table_name=crate::schema::course_subcomponent)]
+pub struct UpdateCourseSubcomponentChangeset {
+    id: String,
+    component_id: String,
     number_in_sequence: i32,
     override_name: Option<String>,
     is_completed: bool,
@@ -59,23 +59,12 @@ pub async fn update_course_component(
         match _component_data.subcomponents {
             None => {}
             Some(new_subcomponents) => {
-                delete(course_subcomponent.filter(component_id.eq(&_component_id))).execute(txn)?;
-
-                insert_into(course_subcomponent)
-                    .values(
-                        new_subcomponents
-                            .into_iter()
-                            .map(|new_subcomponent| CourseSubcomponent {
-                                id: cuid(),
-                                component_id: _component_id.clone(),
-                                grade_value_percentage: new_subcomponent.grade_value_percentage,
-                                is_completed: new_subcomponent.is_completed,
-                                number_in_sequence: new_subcomponent.number_in_sequence,
-                                override_name: new_subcomponent.override_name,
-                            })
-                            .collect::<Vec<CourseSubcomponent>>(),
-                    )
-                    .execute(txn)?;
+                for new_subcomponent in new_subcomponents {
+                    if new_subcomponent.component_id != _component_id {
+                        return Err(AppError::resource_access_denied())
+                    }
+                    update(course_subcomponent.filter(schema::course_subcomponent::id.eq(&new_subcomponent.id))).set(&new_subcomponent).execute(txn)?;
+                }
             }
         }
 
@@ -97,8 +86,7 @@ pub async fn update_course_component(
                     subcomponents,
                 }))
             }
-            Err(e) => Err(e),
+            Err(e) => Err(AppError::database_ise(e)),
         }
     })
-    .map_err(|e| AppError::database_ise(e))
 }
