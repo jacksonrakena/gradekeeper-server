@@ -2,7 +2,7 @@ use axum::extract::Path;
 use std::sync::Arc;
 
 use axum::{Extension, Json};
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal, One, Zero};
 
 use diesel::{update, AsChangeset, BelongingToDsl, Connection, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 
@@ -62,6 +62,12 @@ pub async fn update_course_component(
                 for new_subcomponent in new_subcomponents {
                     if new_subcomponent.component_id != _component_id {
                         return Err(AppError::resource_access_denied())
+                    }
+                    if new_subcomponent.grade_value_percentage.gt(&BigDecimal::one()) {
+                        return Err(AppError::bad_request("Can't set a score higher than 100%."))
+                    }
+                    if new_subcomponent.grade_value_percentage.lt(&BigDecimal::zero()) {
+                        return Err(AppError::bad_request("Can't set a score lower than zero."));
                     }
                     update(course_subcomponent.filter(schema::course_subcomponent::id.eq(&new_subcomponent.id))).set(&new_subcomponent).execute(txn)?;
                 }
