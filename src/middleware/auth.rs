@@ -8,7 +8,7 @@ use axum::Extension;
 use std::sync::Arc;
 
 use diesel::{BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
-
+use google_oauth::AsyncClient;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::Deserialize;
 
@@ -97,6 +97,7 @@ pub async fn validate_ownership_of_route_assets<B>(
 
 pub async fn check_authorization<B>(
     Extension(state): Extension<Arc<ServerState>>,
+    Extension(google_client): Extension<Arc<AsyncClient>>,
     mut request: Request<B>,
     next: Next<B>,
 ) -> Result<Response, AppError> {
@@ -116,18 +117,34 @@ pub async fn check_authorization<B>(
             description: "No authorization header present.".to_string(),
         })?;
 
-    let session = decode::<Session>(
+    match decode::<Session>(
         &token,
         &DecodingKey::from_secret(state.config.jwt_secret.as_ref()),
         &Validation::default(),
-    )
-    .map_err(|_| AppError {
-        status_code: StatusCode::FORBIDDEN,
-        description: "Invalid session token.".to_string(),
-    })?
-    .claims;
-
-    request.extensions_mut().insert(Arc::new(session));
+    ) {
+        Ok(session_data) => {
+            request.extensions_mut().insert(Arc::new(session_data.claims));
+        }
+        Err(_) => {
+            match google_client.validate_id_token(&token).await {
+                Ok(google_token) => {
+                    request.extensions_mut().insert(Arc::new(Session {
+                        id: google_token.email.unwrap(),
+                        exp: google_token.exp as usize,
+                        iat: google_token.iat as usize,
+                        picture: google_token.picture.unwrap_or("".to_string()),
+                        name: google_token.name.unwrap_or("".to_string())
+                    }));
+                },
+                Err(_) => {
+                    return Err(AppError {
+                        status_code: StatusCode::FORBIDDEN,
+                        description: "Invalid session token.".to_string(),
+                    })
+                }
+            };
+        }
+    }
 
     Ok(next.run(request).await)
 }

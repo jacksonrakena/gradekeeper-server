@@ -30,3 +30,5 @@ axum-macros = "0.3.7"
 bigdecimal = { version = "0.3.1", features = ["serde"] }
 diesel_migrations = { version = "2.1.0", features = ["postgres"] }
 base64 = "0.21.4"
+google-oauth = { version = "1" }
+

@@ -21,6 +21,7 @@ use routes::api;
 use std::env;
 use std::iter::once;
 use std::sync::Arc;
+use google_oauth::AsyncClient;
 use hyper::header::CONTENT_TYPE;
 use tower_http::add_extension::AddExtensionLayer;
 use tower_http::cors::{CorsLayer};
@@ -131,6 +132,7 @@ async fn main() {
         .layer(SetSensitiveRequestHeadersLayer::new(once(AUTHORIZATION)))
         .layer(CorsLayer::permissive().allow_headers([AUTHORIZATION, CONTENT_TYPE]))
         .layer(TraceLayer::new_for_http())
+        .layer(AddExtensionLayer::new(Arc::new(AsyncClient::new(initial_state.config.google_client_id.clone()))))
         .layer(AddExtensionLayer::new(Arc::new(initial_state)));
 
     let server =
