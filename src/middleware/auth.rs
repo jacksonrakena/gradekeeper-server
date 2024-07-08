@@ -12,7 +12,7 @@ use google_oauth::AsyncClient;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::Deserialize;
 
-use crate::errors::AppError;
+use crate::errors::{AppError, AppResult};
 use crate::models::{Course, CourseComponent, CourseSubcomponent, StudyBlock};
 use crate::routes::api::auth::callback::Session;
 use crate::schema::course::block_id;
@@ -100,7 +100,7 @@ pub async fn check_authorization<B>(
     Extension(google_client): Extension<Arc<AsyncClient>>,
     mut request: Request<B>,
     next: Next<B>,
-) -> Result<Response, AppError> {
+) -> AppResult<Response> {
     let token = request
         .headers()
         .get(AUTHORIZATION)
@@ -117,34 +117,42 @@ pub async fn check_authorization<B>(
             description: "No authorization header present.".to_string(),
         })?;
 
+    let session = try_decode_session(token, &state, &google_client).await?;
+    request.extensions_mut().insert(Arc::new(session));
+
+    Ok(next.run(request).await)
+}
+
+pub async fn try_decode_session(token: String, state: &Arc<ServerState>, google_client: &Arc<AsyncClient>) -> AppResult<Session> {
+    // Firstly, try and decode as a Gradekeeper proprietary JWT (signed in /api/auth/callback function handle_auth_callback)
     match decode::<Session>(
         &token,
         &DecodingKey::from_secret(state.config.jwt_secret.as_ref()),
         &Validation::default(),
     ) {
         Ok(session_data) => {
-            request.extensions_mut().insert(Arc::new(session_data.claims));
+            Ok(session_data.claims)
         }
+        // Otherwise, try and decode a Google signed ID token
+        // This is for mobile native/RN app clients, which are experimental
         Err(_) => {
             match google_client.validate_id_token(&token).await {
                 Ok(google_token) => {
-                    request.extensions_mut().insert(Arc::new(Session {
+                    Ok(Session {
                         id: google_token.email.unwrap(),
                         exp: google_token.exp as usize,
                         iat: google_token.iat as usize,
                         picture: google_token.picture.unwrap_or("".to_string()),
                         name: google_token.name.unwrap_or("".to_string())
-                    }));
+                    })
                 },
                 Err(_) => {
-                    return Err(AppError {
+                    Err(AppError {
                         status_code: StatusCode::FORBIDDEN,
                         description: "Invalid session token.".to_string(),
                     })
                 }
-            };
+            }
         }
     }
-
-    Ok(next.run(request).await)
 }
