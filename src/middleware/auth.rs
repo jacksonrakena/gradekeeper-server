@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use diesel::{BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use google_oauth::AsyncClient;
+use axum::body::Body;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::Deserialize;
 
@@ -33,12 +34,12 @@ pub struct RouteAssetIdentifiers {
     component_id: Option<String>,
     subcomponent_id: Option<String>,
 }
-pub async fn validate_ownership_of_route_assets<B>(
+pub async fn validate_ownership_of_route_assets(
     Path(route_asset_ids): Path<RouteAssetIdentifiers>,
     Extension(session): Extension<Arc<Session>>,
     Extension(state): Extension<Arc<ServerState>>,
-    request: Request<B>,
-    next: Next<B>
+    request: Request<Body>,
+    next: Next
 ) -> Result<Response, AppError> {
     let con = &mut state.get_db_con()?;
     match &route_asset_ids.block_id {
@@ -95,11 +96,11 @@ pub async fn validate_ownership_of_route_assets<B>(
     Ok(next.run(request).await)
 }
 
-pub async fn check_authorization<B>(
+pub async fn check_authorization(
     Extension(state): Extension<Arc<ServerState>>,
     Extension(google_client): Extension<Arc<AsyncClient>>,
-    mut request: Request<B>,
-    next: Next<B>,
+    mut request: Request<Body>,
+    next: Next,
 ) -> AppResult<Response> {
     let token = request
         .headers()

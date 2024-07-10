@@ -4,11 +4,10 @@ use axum::response::{IntoResponse, Redirect, Response};
 use axum::Extension;
 use base64::engine::general_purpose;
 use base64::Engine;
-use hyper::header::{AUTHORIZATION, CONTENT_TYPE};
-use hyper::Body;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use std::sync::Arc;
-
+use reqwest::Body;
+use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 
 use crate::errors::AppError;
@@ -98,7 +97,6 @@ pub async fn handle_auth_callback(
             AUTHORIZATION,
             format!("{} {}", request.token_type, request.access_token),
         )
-        .body(Body::empty())
         .send()
         .await
         .unwrap()

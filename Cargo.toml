@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = "0.6.18"
+axum = "0.7.5"
 tokio = { version = "1.27.0", features = ["full"] }
 log = "0.4.17"
 serde = { version = "1.0.171", features = ["derive"] }
@@ -16,19 +16,19 @@ diesel = { version = "2.1.0", features = ["time", "extras", "r2d2", "postgres", 
 
 dotenvy = "0.15"
 tower = "0.4.13"
-tower-http = { version = "0.4.1", features = ["cors", "trace", "add-extension", "sensitive-headers"] }
+tower-http = { version = "0.5.2", features = ["cors", "trace", "add-extension", "sensitive-headers"] }
 tracing-subscriber = "0.3.17"
-axum-extra = { version = "0.7.4", features = ["cookie"] }
-jsonwebtoken = "8.3.0"
+axum-extra = { version = "0.9.3", features = ["cookie"] }
+jsonwebtoken = "9.3.0"
 rand_core = "0.6.4"
-hyper = { version = "0.14.27", features = ["client", "full"] }
+hyper = { version = "1.4.1", features = ["client", "full"] }
 serde_urlencoded = "0.7.1"
-reqwest = { version = "0.11.18", features = ["serde_json", "json", "rustls-tls"] }
+reqwest = { version = "0.12.5", features = ["json", "rustls-tls"] }
 chrono = "0.4.26"
 cuid2 = "0.1.0"
-axum-macros = "0.3.7"
+axum-macros = "0.4.1"
 bigdecimal = { version = "0.3.1", features = ["serde"] }
 diesel_migrations = { version = "2.1.0", features = ["postgres"] }
-base64 = "0.21.4"
+base64 = "0.22.1"
 google-oauth = { version = "1" }
 
