@@ -1,7 +1,7 @@
 use axum::extract::{Host, Query};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::Extension;
+use axum::{Extension, http};
 use base64::engine::general_purpose;
 use base64::Engine;
 use hyper::header::{AUTHORIZATION, CONTENT_TYPE};
@@ -15,6 +15,8 @@ use crate::errors::AppError;
 use crate::routes::api::auth::determine_callback_url;
 use crate::routes::api::auth::login::LoginRequestInfo;
 use crate::ServerState;
+
+use super::login::validate_login_request_info;
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
@@ -70,6 +72,8 @@ pub async fn handle_auth_callback(
     let lri = serde_json::from_slice::<LoginRequestInfo>(&*decoded_info_bytes).or_else(|_| {
         AppError::bad_request("Unable to decode login information from state.").into()
     })?;
+
+    let redirect_uri = validate_login_request_info(&lri, &state)?;
 
     let client = reqwest::Client::new();
     let request = client
@@ -129,9 +133,8 @@ pub async fn handle_auth_callback(
     )
     .unwrap();
 
-    let response =
-        Redirect::to(format!("{}/?token={}", lri.redirect_url, token.to_owned()).as_str())
-            .into_response();
+    let response = Redirect::to(format!("{}?token={}", redirect_uri, token.to_owned()).as_str())
+        .into_response();
 
     Ok(response)
 }

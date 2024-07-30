@@ -18,7 +18,7 @@ pub struct LoginRequestInfo {
     pub redirect_url: String,
 }
 
-fn validate_login_request_info(
+pub(crate) fn validate_login_request_info(
     login_request_info: &LoginRequestInfo,
     state: &Arc<ServerState>,
 ) -> Result<Uri, AppError> {
