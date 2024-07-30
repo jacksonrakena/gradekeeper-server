@@ -42,7 +42,7 @@ pub async fn update_course_component_order(
         return AppError::bad_request("Update must contain a valid sequence.").into()
     }
 
-    let update_sequence_transaction = con.transaction(|txn| {
+    con.transaction(|txn| {
         for (component_id, new_sequence_number) in _component_data {
             match update(course_component)
                 .filter(id.eq(&component_id))
@@ -55,10 +55,7 @@ pub async fn update_course_component_order(
             }
         }
         Ok(0)
-    });
-    if update_sequence_transaction.is_err() {
-        return Err(update_sequence_transaction.unwrap_err())
-    }
+    })?;
 
     get_course(Path((_block_id, _course_id)), Extension(state)).await
 }

@@ -23,6 +23,7 @@ use std::iter::once;
 use std::sync::Arc;
 use google_oauth::AsyncClient;
 use hyper::header::CONTENT_TYPE;
+use tokio::net::TcpListener;
 use tower_http::add_extension::AddExtensionLayer;
 use tower_http::cors::{CorsLayer};
 use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
@@ -135,8 +136,7 @@ async fn main() {
         .layer(AddExtensionLayer::new(Arc::new(AsyncClient::new(initial_state.config.google_client_id.clone()))))
         .layer(AddExtensionLayer::new(Arc::new(initial_state)));
 
-    let server =
-        axum::Server::bind(&"0.0.0.0:3000".parse().unwrap()).serve(app.into_make_service());
+    let server = axum::serve(TcpListener::bind("0.0.0.0:3000").await.unwrap(), app);
 
     if let Err(err) = server.await {
         error!("server crashed: {}", err);
