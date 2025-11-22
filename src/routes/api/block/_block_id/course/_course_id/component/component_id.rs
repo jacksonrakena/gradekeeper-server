@@ -4,7 +4,10 @@ use std::sync::Arc;
 use axum::{Extension, Json};
 use bigdecimal::{BigDecimal, One, Zero};
 
-use diesel::{update, AsChangeset, BelongingToDsl, Connection, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
+use diesel::{
+    update, AsChangeset, BelongingToDsl, Connection, ExpressionMethods, QueryDsl, RunQueryDsl,
+    SelectableHelper,
+};
 
 use crate::errors::AppError;
 use crate::models::{CourseComponent, CourseSubcomponent};
@@ -26,7 +29,7 @@ pub struct UpdateCourseComponentChangeset {
     pub name_of_subcomponent_singular: Option<String>,
     pub subject_weighting: Option<BigDecimal>,
     #[serde(rename = "numberOfSubComponentsToDrop_Lowest")]
-    pub number_of_subcomponents_to_drop_lowest: Option<i32>
+    pub number_of_subcomponents_to_drop_lowest: Option<i32>,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -36,7 +39,7 @@ pub struct UpdateCourseComponent {
     pub subcomponents: Option<Vec<UpdateCourseSubcomponentChangeset>>,
 }
 
-#[derive(Deserialize,AsChangeset)]
+#[derive(Deserialize, AsChangeset)]
 #[serde(rename_all = "camelCase")]
 #[diesel(table_name=crate::schema::course_subcomponent)]
 pub struct UpdateCourseSubcomponentChangeset {
@@ -61,15 +64,26 @@ pub async fn update_course_component(
             Some(new_subcomponents) => {
                 for new_subcomponent in new_subcomponents {
                     if new_subcomponent.component_id != _component_id {
-                        return Err(AppError::resource_access_denied())
+                        return Err(AppError::resource_access_denied());
                     }
-                    if new_subcomponent.grade_value_percentage.gt(&BigDecimal::one()) {
-                        return Err(AppError::bad_request("Can't set a score higher than 100%."))
+                    if new_subcomponent
+                        .grade_value_percentage
+                        .gt(&BigDecimal::one())
+                    {
+                        return Err(AppError::bad_request("Can't set a score higher than 100%."));
                     }
-                    if new_subcomponent.grade_value_percentage.lt(&BigDecimal::zero()) {
+                    if new_subcomponent
+                        .grade_value_percentage
+                        .lt(&BigDecimal::zero())
+                    {
                         return Err(AppError::bad_request("Can't set a score lower than zero."));
                     }
-                    update(course_subcomponent.filter(schema::course_subcomponent::id.eq(&new_subcomponent.id))).set(&new_subcomponent).execute(txn)?;
+                    update(
+                        course_subcomponent
+                            .filter(schema::course_subcomponent::id.eq(&new_subcomponent.id)),
+                    )
+                    .set(&new_subcomponent)
+                    .execute(txn)?;
                 }
             }
         }

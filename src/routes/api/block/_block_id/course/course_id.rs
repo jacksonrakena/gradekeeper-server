@@ -36,7 +36,7 @@ pub async fn update_course(
         .set(_update_course)
         .execute(con)?;
 
-    return get_course(Path((_block_id, _course_id)), Extension(state)).await;
+    get_course(Path((_block_id, _course_id)), Extension(state)).await
 }
 
 pub async fn delete_course(

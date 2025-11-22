@@ -19,11 +19,9 @@ pub async fn delete_block(
     let rows = diesel::delete(study_block)
         .filter(id.eq(_id).and(user_id.eq(session.id.clone())))
         .execute(con)
-        .or_else(|_e| {
-            Err(AppError {
-                status_code: StatusCode::BAD_REQUEST,
-                description: "Failed to delete study block.".to_string(),
-            })
+        .map_err(|_e| AppError {
+            status_code: StatusCode::BAD_REQUEST,
+            description: "Failed to delete study block.".to_string(),
         })?;
 
     if rows == 0 {

@@ -11,9 +11,9 @@ pub struct ServerMetaInfo {
     commit_message: String,
     commit_author_name: String,
     commit_branch: String,
-    compiled_at: String
+    compiled_at: String,
 }
-fn gather_meta_info() -> ServerMetaInfo {
+pub fn gather_meta_info() -> ServerMetaInfo {
     ServerMetaInfo {
         version: env!("CARGO_PKG_VERSION").to_string(),
         name: env!("CARGO_PKG_NAME").to_string(),
@@ -21,6 +21,6 @@ fn gather_meta_info() -> ServerMetaInfo {
         commit_message: env!("GK_SERVER_COMMIT_MSG").to_string(),
         commit_author_name: env!("GK_SERVER_COMMITTER").to_string(),
         commit_branch: env!("GK_SERVER_BRANCH").to_string(),
-        compiled_at: env!("GK_SERVER_COMPILED_AT").to_string()
+        compiled_at: env!("GK_SERVER_COMPILED_AT").to_string(),
     }
 }

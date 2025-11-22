@@ -14,6 +14,7 @@ pub struct AppError {
     pub(crate) status_code: StatusCode,
     pub(crate) description: String,
 }
+
 impl From<Error> for AppError {
     fn from(value: Error) -> Self {
         match value {
@@ -59,9 +60,9 @@ impl AppError {
     }
 }
 
-impl<T> Into<Result<T, AppError>> for AppError {
-    fn into(self) -> Result<T, AppError> {
-        Err(self)
+impl<T> From<AppError> for Result<T, AppError> {
+    fn from(val: AppError) -> Self {
+        Err(val)
     }
 }
 impl IntoResponse for AppError {

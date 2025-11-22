@@ -1,8 +1,8 @@
 use dotenvy::dotenv;
 use hyper::Uri;
+use log::info;
 use std::env;
 use std::str::FromStr;
-use log::info;
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -16,7 +16,7 @@ pub struct Config {
 
 impl Config {
     pub fn init_from_env() -> Config {
-        if let Err(_) = dotenv() {
+        if dotenv().is_err() {
             info!("No .env file found: loading configuration from environment");
         }
         Config {
@@ -30,13 +30,12 @@ impl Config {
             permitted_redirect_urls: Config::expect_array("PERMITTED_REDIRECT_URLS")
                 .iter()
                 .map(|d| {
-                    Uri::from_str(d).expect(
-                        format!(
+                    Uri::from_str(d).unwrap_or_else(|_| {
+                        panic!(
                             "PERMITTED_REDIRECT_URLS: Could not parse '{}' as valid URL",
                             d
                         )
-                        .as_str(),
-                    )
+                    })
                 })
                 .collect::<Vec<Uri>>(),
         }

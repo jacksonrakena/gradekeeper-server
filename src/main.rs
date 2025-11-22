@@ -7,6 +7,7 @@ mod schema;
 use crate::config::Config;
 use crate::errors::AppError;
 use crate::middleware::auth::{check_authorization, validate_ownership_of_route_assets};
+use crate::routes::health;
 use axum::http::header::AUTHORIZATION;
 use axum::http::StatusCode;
 use axum::{
@@ -16,16 +17,16 @@ use axum::{
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use google_oauth::AsyncClient;
+use hyper::header::CONTENT_TYPE;
 use log::{error, info};
 use routes::api;
 use std::env;
 use std::iter::once;
 use std::sync::Arc;
-use google_oauth::AsyncClient;
-use hyper::header::CONTENT_TYPE;
 use tokio::net::TcpListener;
 use tower_http::add_extension::AddExtensionLayer;
-use tower_http::cors::{CorsLayer};
+use tower_http::cors::CorsLayer;
 use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::filter::Targets;
@@ -66,9 +67,9 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .with(filter)
         .init();
-    
+
     let config = Config::init_from_env();
-    
+
     info!(
         "Gradekeeper server v{} starting on {}/{}/{}",
         env!("CARGO_PKG_VERSION"),
@@ -108,18 +109,18 @@ async fn main() {
         .route("/api/users/me", axum::routing::delete(api::users::me::delete_user))
         // Blocks
         .route("/api/block/create", post(api::block::create::create_block))
-        .route("/api/block/:block_id", axum::routing::delete(api::block::block_id::delete_block))
-        .route("/api/block/:block_id/import", post(api::block::_block_id::import::import_course))
+        .route("/api/block/{block_id}", axum::routing::delete(api::block::block_id::delete_block))
+        .route("/api/block/{block_id}/import", post(api::block::_block_id::import::import_course))
 
         // Courses
-        .route("/api/block/:block_id/course/create", post(api::block::_block_id::course::create::create_course))
-        .route("/api/block/:block_id/course/:course_id", get(api::block::_block_id::course::course_id::get_course))
-        .route("/api/block/:block_id/course/:course_id", axum::routing::delete(api::block::_block_id::course::course_id::delete_course))
-        .route("/api/block/:block_id/course/:course_id", post(api::block::_block_id::course::course_id::update_course))
-        .route("/api/block/:block_id/course/:course_id/order", post(api::block::_block_id::course::_course_id::order::update_course_component_order))
+        .route("/api/block/{block_id}/course/create", post(api::block::_block_id::course::create::create_course))
+        .route("/api/block/{block_id}/course/{course_id}", get(api::block::_block_id::course::course_id::get_course))
+        .route("/api/block/{block_id}/course/{course_id}", axum::routing::delete(api::block::_block_id::course::course_id::delete_course))
+        .route("/api/block/{block_id}/course/{course_id}", post(api::block::_block_id::course::course_id::update_course))
+        .route("/api/block/{block_id}/course/{course_id}/order", post(api::block::_block_id::course::_course_id::order::update_course_component_order))
         
         // Components
-        .route("/api/block/:block_id/course/:course_id/component/:component_id",
+        .route("/api/block/{block_id}/course/{course_id}/component/{component_id}",
                post(api::block::_block_id::course::_course_id::component::component_id::update_course_component)
         )
         .layer(axum::middleware::from_fn(validate_ownership_of_route_assets))
@@ -129,6 +130,7 @@ async fn main() {
         // Login
         .route("/api/auth/login", get(api::auth::login::handle_login_request))
         .route("/api/auth/callback", get(api::auth::callback::handle_auth_callback))
+        .route("/health", get(health::health_status))
         // Final Layer - CORS
         .layer(SetSensitiveRequestHeadersLayer::new(once(AUTHORIZATION)))
         .layer(CorsLayer::permissive().allow_headers([AUTHORIZATION, CONTENT_TYPE]))

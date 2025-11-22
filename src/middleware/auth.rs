@@ -7,9 +7,9 @@ use axum::Extension;
 
 use std::sync::Arc;
 
+use axum::body::Body;
 use diesel::{BoolExpressionMethods, ExpressionMethods, QueryDsl, RunQueryDsl, SelectableHelper};
 use google_oauth::AsyncClient;
-use axum::body::Body;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::Deserialize;
 
@@ -39,59 +39,63 @@ pub async fn validate_ownership_of_route_assets(
     Extension(session): Extension<Arc<Session>>,
     Extension(state): Extension<Arc<ServerState>>,
     request: Request<Body>,
-    next: Next
+    next: Next,
 ) -> Result<Response, AppError> {
     let con = &mut state.get_db_con()?;
-    match &route_asset_ids.block_id {
-        Some(_block_id) => {
-            if !study_block
-                .filter(id.eq(_block_id).and(user_id.eq(&session.id)))
-                .select(StudyBlock::as_select())
-                .first(con)
-                .is_ok() {
-                return Err(AppError::resource_access_denied())
-            }
-        },
-        _ => {}
+    if let Some(_block_id) = &route_asset_ids.block_id {
+        if study_block
+            .filter(id.eq(_block_id).and(user_id.eq(&session.id)))
+            .select(StudyBlock::as_select())
+            .first(con)
+            .is_err()
+        {
+            return Err(AppError::resource_access_denied());
+        }
     }
-    
-    match &route_asset_ids.course_id {
-        Some(_course_id) => {
-            if !course
-                .filter(crate::schema::course::id.eq(_course_id).and(block_id.eq(route_asset_ids.block_id.unwrap())))
-                .select(Course::as_select())
-                .first(con)
-                .is_ok() {
-                return Err(AppError::resource_access_denied())
-            }
-        },
-        _ => {}
+
+    if let Some(_course_id) = &route_asset_ids.course_id {
+        if course
+            .filter(
+                crate::schema::course::id
+                    .eq(_course_id)
+                    .and(block_id.eq(route_asset_ids.block_id.unwrap())),
+            )
+            .select(Course::as_select())
+            .first(con)
+            .is_err()
+        {
+            return Err(AppError::resource_access_denied());
+        }
     }
-    
-    match &route_asset_ids.component_id {
-        Some(_component_id) => {
-            if !course_component
-                .filter(crate::schema::course_component::id.eq(_component_id).and(course_id.eq(route_asset_ids.course_id.unwrap())))
-                .select(CourseComponent::as_select())
-                .first(con)
-                .is_ok() {
-                return Err(AppError::resource_access_denied())
-            }
-        },
-        _ => {}
+
+    if let Some(_component_id) = &route_asset_ids.component_id {
+        if course_component
+            .filter(
+                crate::schema::course_component::id
+                    .eq(_component_id)
+                    .and(course_id.eq(route_asset_ids.course_id.unwrap())),
+            )
+            .select(CourseComponent::as_select())
+            .first(con)
+            .is_err()
+        {
+            return Err(AppError::resource_access_denied());
+        }
     }
-    
-    match &route_asset_ids.subcomponent_id {
-        Some(_subcomponent_id) => {
-            if !course_subcomponent
-                .filter(crate::schema::course_subcomponent::id.eq(_subcomponent_id).and(component_id.eq(route_asset_ids.component_id.unwrap())))
-                .select(CourseSubcomponent::as_select())
-                .first(con)
-                .is_ok() {
-                return Err(AppError::resource_access_denied())
-            }
-        },
-        _ => {}
+
+    if let Some(_subcomponent_id) = &route_asset_ids.subcomponent_id {
+        if course_subcomponent
+            .filter(
+                crate::schema::course_subcomponent::id
+                    .eq(_subcomponent_id)
+                    .and(component_id.eq(route_asset_ids.component_id.unwrap())),
+            )
+            .select(CourseSubcomponent::as_select())
+            .first(con)
+            .is_err()
+        {
+            return Err(AppError::resource_access_denied());
+        }
     }
     Ok(next.run(request).await)
 }
@@ -107,11 +111,9 @@ pub async fn check_authorization(
         .get(AUTHORIZATION)
         .and_then(|auth_header| auth_header.to_str().ok())
         .and_then(|auth_value| {
-            if auth_value.starts_with("Bearer ") {
-                Some(auth_value[7..].to_owned())
-            } else {
-                None
-            }
+            auth_value
+                .strip_prefix("Bearer ")
+                .map(|bearer_token| bearer_token.to_owned())
         })
         .ok_or_else(|| AppError {
             status_code: StatusCode::UNAUTHORIZED,
@@ -124,36 +126,32 @@ pub async fn check_authorization(
     Ok(next.run(request).await)
 }
 
-pub async fn try_decode_session(token: String, state: &Arc<ServerState>, google_client: &Arc<AsyncClient>) -> AppResult<Session> {
+pub async fn try_decode_session(
+    token: String,
+    state: &Arc<ServerState>,
+    google_client: &Arc<AsyncClient>,
+) -> AppResult<Session> {
     // Firstly, try and decode as a Gradekeeper proprietary JWT (signed in /api/auth/callback function handle_auth_callback)
     match decode::<Session>(
         &token,
         &DecodingKey::from_secret(state.config.jwt_secret.as_ref()),
         &Validation::default(),
     ) {
-        Ok(session_data) => {
-            Ok(session_data.claims)
-        }
+        Ok(session_data) => Ok(session_data.claims),
         // Otherwise, try and decode a Google signed ID token
         // This is for mobile native/RN app clients, which are experimental
-        Err(_) => {
-            match google_client.validate_id_token(&token).await {
-                Ok(google_token) => {
-                    Ok(Session {
-                        id: google_token.email.unwrap(),
-                        exp: google_token.exp as usize,
-                        iat: google_token.iat as usize,
-                        picture: google_token.picture.unwrap_or("".to_string()),
-                        name: google_token.name.unwrap_or("".to_string())
-                    })
-                },
-                Err(_) => {
-                    Err(AppError {
-                        status_code: StatusCode::FORBIDDEN,
-                        description: "Invalid session token.".to_string(),
-                    })
-                }
-            }
-        }
+        Err(_) => match google_client.validate_id_token(&token).await {
+            Ok(google_token) => Ok(Session {
+                id: google_token.email.unwrap(),
+                exp: google_token.exp as usize,
+                iat: google_token.iat as usize,
+                picture: google_token.picture.unwrap_or("".to_string()),
+                name: google_token.name.unwrap_or("".to_string()),
+            }),
+            Err(_) => Err(AppError {
+                status_code: StatusCode::FORBIDDEN,
+                description: "Invalid session token.".to_string(),
+            }),
+        },
     }
 }

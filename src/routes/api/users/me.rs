@@ -1,5 +1,12 @@
 use std::sync::Arc;
 
+use crate::errors::AppError;
+use crate::models::{Course, CourseComponent, CourseSubcomponent, StudyBlock, User};
+use crate::routes::api::auth::callback::Session;
+use crate::routes::api::users::{gather_meta_info, ServerMetaInfo};
+use crate::schema::gk_user::dsl::gk_user;
+use crate::schema::gk_user::{grade_map, id};
+use crate::ServerState;
 use axum::{Extension, Json};
 use diesel::prelude::*;
 use diesel::{delete, insert_into, update};
@@ -8,21 +15,12 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use time::OffsetDateTime;
 
-use crate::errors::AppError;
-use crate::models::{Course, CourseComponent, CourseSubcomponent, StudyBlock, User};
-use crate::routes::api::auth::callback::Session;
-use crate::routes::api::users::{gather_meta_info, ServerMetaInfo};
-use crate::schema::gk_user::dsl::gk_user;
-use crate::schema::gk_user::{grade_map, id};
-use crate::ServerState;
-
-
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetUser {
     grade_map: serde_json::Value,
     study_blocks: Vec<GetUserStudyBlock>,
-    meta: ServerMetaInfo
+    meta: ServerMetaInfo,
 }
 
 #[derive(Serialize)]
@@ -33,6 +31,7 @@ pub struct GetUserStudyBlock {
     courses: Vec<GetUserCourse>,
 }
 
+//#[derive(Serialize, ToSchema)]
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetUserCourse {
@@ -42,6 +41,7 @@ pub struct GetUserCourse {
     pub components: Vec<GetUserComponent>,
 }
 
+//#[derive(Serialize, ToSchema)]
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetUserComponent {
@@ -130,10 +130,10 @@ pub async fn get_user<B>(
             Ok(Json(GetUser {
                 grade_map: user.grade_map,
                 study_blocks: vec![],
-                meta: gather_meta_info()
+                meta: gather_meta_info(),
             }))
         }
-        Err(e) => Err(AppError::database_ise(e))
+        Err(e) => Err(AppError::database_ise(e)),
     }
 }
 

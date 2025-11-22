@@ -1,14 +1,15 @@
-use axum::extract::{Host, Query};
+use axum::extract::Query;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::{Extension, http};
+use axum::Extension;
+use axum_extra::extract::Host;
 use base64::engine::general_purpose;
 use base64::Engine;
 use jsonwebtoken::{encode, EncodingKey, Header};
-use std::sync::Arc;
-use reqwest::Body;
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
+use reqwest::Body;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 use crate::errors::AppError;
 use crate::routes::api::auth::determine_callback_url;
@@ -68,7 +69,7 @@ pub async fn handle_auth_callback(
         .decode(&*data.state)
         .or_else(|_| AppError::bad_request("Unable to decode base64 data from state.").into())?;
 
-    let lri = serde_json::from_slice::<LoginRequestInfo>(&*decoded_info_bytes).or_else(|_| {
+    let lri = serde_json::from_slice::<LoginRequestInfo>(&decoded_info_bytes).or_else(|_| {
         AppError::bad_request("Unable to decode login information from state.").into()
     })?;
 

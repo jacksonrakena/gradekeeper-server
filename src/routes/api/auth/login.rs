@@ -1,8 +1,9 @@
 use crate::errors::AppError;
 use crate::ServerState;
-use axum::extract::{Host, Query};
+use axum::extract::Query;
 use axum::response::Redirect;
 use axum::Extension;
+use axum_extra::extract::Host;
 use base64::engine::general_purpose;
 use base64::Engine;
 use hyper::Uri;
@@ -56,5 +57,5 @@ pub async fn handle_login_request(
         )
     );
 
-    Ok(Redirect::to(&*redirection_url))
+    Ok(Redirect::to(&redirection_url))
 }

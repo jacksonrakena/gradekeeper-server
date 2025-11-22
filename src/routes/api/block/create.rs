@@ -28,11 +28,9 @@ pub async fn create_block(
     insert_into(study_block)
         .values(&block)
         .execute(con)
-        .or_else(|e| {
-            Err(AppError {
-                status_code: StatusCode::INTERNAL_SERVER_ERROR,
-                description: format!("Could not create study block: {}", e),
-            })
+        .map_err(|e| AppError {
+            status_code: StatusCode::INTERNAL_SERVER_ERROR,
+            description: format!("Could not create study block: {}", e),
         })?;
 
     Ok(Json(block))
