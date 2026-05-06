@@ -6,7 +6,10 @@ use std::str::FromStr;
 
 #[derive(Debug, Clone)]
 pub struct Config {
-    pub database_url: String,
+    pub database_user: String,
+    pub database_password: String,
+    pub database_host: String,
+    pub database_name: String,
     pub jwt_secret: String,
     pub jwt_maxage: i64,
     pub google_client_id: String,
@@ -20,7 +23,10 @@ impl Config {
             info!("No .env file found: loading configuration from environment");
         }
         Config {
-            database_url: Config::expect_var("DATABASE_URL"),
+            database_user: Config::expect_var("DATABASE_USERNAME"),
+            database_name: Config::expect_var("DATABASE_NAME"),
+            database_password: Config::expect_var("DATABASE_PASSWORD"),
+            database_host: Config::expect_var("DATABASE_HOST"),
             jwt_secret: Config::expect_var("JWT_SECRET"),
             jwt_maxage: Config::expect_var("JWT_MAXAGE")
                 .parse::<i64>()
@@ -41,6 +47,9 @@ impl Config {
         }
     }
 
+    pub fn build_database_url(&self) -> String {
+        format!("postgresql://{}:{}@{}/{}", self.database_user, self.database_password, self.database_host, self.database_name)
+    }
     fn expect_var(name: &'static str) -> String {
         match env::var(name) {
             Ok(v) => v,

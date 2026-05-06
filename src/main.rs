@@ -91,7 +91,7 @@ async fn main() {
     let initial_state = ServerState {
         db_pool: Pool::builder()
             .test_on_check_out(true)
-            .build(ConnectionManager::<PgConnection>::new(&config.database_url))
+            .build(ConnectionManager::<PgConnection>::new(&config.build_database_url()))
             .expect("Could not build connection pool"),
         config,
     };
